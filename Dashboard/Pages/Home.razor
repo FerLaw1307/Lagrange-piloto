@@ -1,7 +1,28 @@
 ﻿@page "/"
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+@if (IsAuthenticated)
+{
+    <h1>Hello, world!</h1>
+    <p>Welcome to your new app.</p>
+}
+else
+{
+    <p>Redirigiendo al login...</p>
+}
 
-Welcome to your new app.
+@code {
+    private bool IsAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+        }
+    }
+}

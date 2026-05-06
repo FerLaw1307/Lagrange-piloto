@@ -29,16 +29,114 @@
                 <span class="bi bi-people" aria-hidden="true"></span> Usuarios
             </NavLink>
         </div>
+        <hr class="my-3">
+        @if (IsAuthenticated)
+        {
+            <div class="nav-item px-3">
+                <button class="btn btn-outline-light w-100" @onclick="Logout">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Cerrar Sesion
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Iniciar Sesion
+                </NavLink>
+            </div>
+        }
+    </nav>
+</div>
+
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <!-- <a class="navbar-brand" href="">Dashboard</a> -->
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="organizacion">
+                <span class="bi bbi-buildings-fill" aria-hidden="true"></span> Organización
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="animales">
+                <span class="bi bi-list-columns-reverse"" aria-hidden="true"></span> Animales
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="usuarios">
+                <span class="bi bi-people" aria-hidden="true"></span> Usuarios
+            </NavLink>
+        </div>
+        <hr class="my-3">
+        @if (IsAuthenticated)
+        {
+            <div class="nav-item px-3">
+                <button class="btn btn-outline-light w-100" @onclick="Logout">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Cerrar Sesion
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="login">
+                    <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Iniciar Sesion
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
+    private bool IsAuthenticated = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        AuthService.OnAuthStateChanged += HandleAuthStateChanged;
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+            StateHasChanged();
+        });
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= HandleAuthStateChanged;
     }
 }
