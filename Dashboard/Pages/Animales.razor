@@ -1,6 +1,149 @@
 ﻿@page "/animales"
-<h3>Animales</h3>
+@inject EspecieService EspecieService
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Especies</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <p>Redirigiendo al login...</p>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-3">Gestión de Especies</h2>
+
+                <!-- Filtros -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" placeholder="Buscar por ID, nombre o científico..." @bind="SearchTerm" @oninput="OnSearchChanged" />
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-end">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" id="tableView" autocomplete="off" name="viewMode" value="table" checked="@(ViewMode == "table")" @onchange="@(() => ViewMode = "table")" />
+                            <label class="btn btn-outline-primary" for="tableView">
+                                <i class="bi bi-table"></i> Tabla
+                            </label>
+
+                            <input type="radio" class="btn-check" id="cardView" autocomplete="off" name="viewMode" value="cards" checked="@(ViewMode == "cards")" @onchange="@(() => ViewMode = "cards")" />
+                            <label class="btn btn-outline-primary" for="cardView">
+                                <i class="bi bi-card-text"></i> Tarjetas
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vista Tabla -->
+                @if (ViewMode == "table")
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID Especie</th>
+                                    <th>UUID Sistema</th>
+                                    <th>Nombre Especie</th>
+                                    <th>Nombre Científico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var especie in FilteredEspecies)
+                                {
+                                    <tr>
+                                        <td><code>@especie.IdEspecie</code></td>
+                                        <td><small class="text-muted">@especie.UuidSistema</small></td>
+                                        <td><strong>@especie.NombreEspecie</strong></td>
+                                        <td><em>@especie.NombreCientifico</em></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                <!-- Vista Tarjetas -->
+                @if (ViewMode == "cards")
+                {
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        @foreach (var especie in FilteredEspecies)
+                        {
+                            <div class="col">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-header bg-primary text-white">
+                                        <h5 class="card-title mb-0">@especie.NombreEspecie</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <strong>ID:</strong> <code>@especie.IdEspecie</code>
+                                        </div>
+                                        <div class="mb-2">
+                                            <strong>UUID:</strong> <small class="text-muted">@especie.UuidSistema</small>
+                                        </div>
+                                        <div class="mb-0">
+                                            <strong>Científico:</strong> <em>@especie.NombreCientifico</em>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer text-muted">
+                                        <small>Especie registrada</small>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @if (!FilteredEspecies.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-search display-1 text-muted"></i>
+                        <h4 class="text-muted mt-3">No se encontraron especies</h4>
+                        <p class="text-muted">Intenta con otros términos de búsqueda</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
 
 @code {
+    private bool IsAuthenticated = false;
+    private List<Especie> AllEspecies = new();
+    private List<Especie> FilteredEspecies = new();
+    private string SearchTerm = string.Empty;
+    private string ViewMode = "table";
 
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        await LoadEspeciesAsync();
+    }
+
+    private async Task LoadEspeciesAsync()
+    {
+        AllEspecies = await EspecieService.GetAllEspeciesAsync();
+        await FilterEspeciesAsync();
+    }
+
+    private async Task FilterEspeciesAsync()
+    {
+        FilteredEspecies = await EspecieService.GetFilteredEspeciesAsync(SearchTerm);
+        StateHasChanged();
+    }
+
+    private async Task OnSearchChanged()
+    {
+        await FilterEspeciesAsync();
+    }
 }
