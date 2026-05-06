@@ -1,4 +1,4 @@
-@page "/login"
+@page "/"
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
 @inject UserService UserService
@@ -107,6 +107,14 @@
     private string? ErrorMessage;
     private bool IsLoading = false;
     private bool ShowRegisterForm = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await AuthService.IsAuthenticatedAsync())
+        {
+            Navigation.NavigateTo("/home");
+        }
+    }
 
     private async Task HandleLogin()
     {
