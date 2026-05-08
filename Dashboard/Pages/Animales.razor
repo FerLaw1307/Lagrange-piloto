@@ -74,23 +74,27 @@ else
                         @foreach (var especie in FilteredEspecies)
                         {
                             <div class="col">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-header bg-primary text-white">
-                                        <h5 class="card-title mb-0">@especie.NombreEspecie</h5>
+                                <div class="animal-card h-100">
+                                    <div class="animal-card-header">
+                                        <div>
+                                            <h5 class="animal-card-title mb-1">@especie.NombreEspecie</h5>
+                                            <p class="animal-card-subtitle mb-0"><small>@especie.NombreCientifico</small></p>
+                                        </div>
+                                        <span class="animal-card-badge">Especie</span>
                                     </div>
-                                    <div class="card-body">
-                                        <div class="mb-2">
-                                            <strong>ID:</strong> <code>@especie.IdEspecie</code>
+                                    <div class="animal-card-content">
+                                        <div class="animal-card-row">
+                                            <span class="animal-card-key">ID</span>
+                                            <span class="animal-card-value"><code>@especie.IdEspecie</code></span>
                                         </div>
-                                        <div class="mb-2">
-                                            <strong>UUID:</strong> <small class="text-muted">@especie.UuidSistema</small>
+                                        <div class="animal-card-row">
+                                            <span class="animal-card-key">UUID</span>
+                                            <span class="animal-card-value text-muted">@especie.UuidSistema</span>
                                         </div>
-                                        <div class="mb-0">
-                                            <strong>Científico:</strong> <em>@especie.NombreCientifico</em>
+                                        <div class="animal-card-row animal-card-row-bottom">
+                                            <span class="animal-card-key">Nombre científico</span>
+                                            <span class="animal-card-value"><em>@especie.NombreCientifico</em></span>
                                         </div>
-                                    </div>
-                                    <div class="card-footer text-muted">
-                                        <small>Especie registrada</small>
                                     </div>
                                 </div>
                             </div>
