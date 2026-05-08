@@ -1,0 +1,88 @@
+@page "/organizacion/empresa/{EmpresaId}"
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject EmpresaService EmpresaService
+@inject RanchoService RanchoService
+
+<PageTitle>Detalle Empresa</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <p>Redirigiendo al login...</p>
+}
+else if (Empresa == null)
+{
+    <div class="alert alert-warning">Empresa ganadera no encontrada.</div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Empresa: @Empresa.NombreEmpresa</h2>
+                    <p class="text-muted mb-0">Ubicación: @Empresa.Ubicacion</p>
+                    <small class="text-muted">ID: @Empresa.IdEmpresa · UUID: @Empresa.UuidSistema</small>
+                </div>
+                <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            @foreach (var rancho in Ranchos)
+            {
+                <div class="col">
+                    <div class="animal-card org-card-rancho h-100">
+                        <div class="animal-card-header">
+                            <div>
+                                <h5 class="animal-card-title mb-1">@rancho.NombreRancho</h5>
+                                <p class="animal-card-subtitle mb-0"><small>@rancho.Region</small></p>
+                            </div>
+                            <span class="animal-card-badge badge-rancho">Rancho</span>
+                        </div>
+                        <div class="animal-card-content">
+                            <div class="animal-card-row">
+                                <span class="animal-card-key">ID</span>
+                                <span class="animal-card-value"><code>@rancho.IdRancho</code></span>
+                            </div>
+                            <div class="animal-card-row animal-card-row-bottom">
+                                <button class="btn btn-sm btn-outline-primary w-100" @onclick="() => NavigateToRancho(rancho.IdRancho)">Ver detalle</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (!Ranchos.Any())
+            {
+                <div class="col-12">
+                    <div class="alert alert-info">No hay ranchos registrados para esta empresa.</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string EmpresaId { get; set; } = string.Empty;
+
+    private bool IsAuthenticated;
+    private EmpresaGanadera? Empresa;
+    private List<Rancho> Ranchos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        Empresa = await EmpresaService.GetEmpresaByIdAsync(EmpresaId);
+        Ranchos = Empresa != null ? await RanchoService.GetRanchosByEmpresaIdAsync(Empresa.IdEmpresa) : new List<Rancho>();
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/organizacion");
+    private void NavigateToRancho(string id) => Navigation.NavigateTo($"/organizacion/rancho/{id}");
+}

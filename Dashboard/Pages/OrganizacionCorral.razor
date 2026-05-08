@@ -1,0 +1,100 @@
+@page "/organizacion/corral/{CorralId}"
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject CorralService CorralService
+@inject RanchoService RanchoService
+@inject EmpresaService EmpresaService
+
+<PageTitle>Detalle Corral</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <p>Redirigiendo al login...</p>
+}
+else if (Corral == null)
+{
+    <div class="alert alert-warning">Corral no encontrado.</div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Corral: @Corral.NombreCorral</h2>
+                    <p class="text-muted mb-0">Capacidad: @Corral.Capacidad</p>
+                    <small class="text-muted">ID: @Corral.IdCorral · UUID: @Corral.UuidSistema</small>
+                    @if (Rancho != null)
+                    {
+                        <div><strong>Rancho:</strong> @Rancho.NombreRancho</div>
+                    }
+                    @if (Empresa != null)
+                    {
+                        <div><strong>Empresa:</strong> @Empresa.NombreEmpresa</div>
+                    }
+                </div>
+                <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="animal-card org-card-corral">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Información del Corral</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Detalles registrados</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-corral">Corral</span>
+                    </div>
+                    <div class="animal-card-content">
+                        <div class="animal-card-row">
+                            <span class="animal-card-key">Nombre</span>
+                            <span class="animal-card-value">@Corral.NombreCorral</span>
+                        </div>
+                        <div class="animal-card-row">
+                            <span class="animal-card-key">Capacidad</span>
+                            <span class="animal-card-value">@Corral.Capacidad</span>
+                        </div>
+                        <div class="animal-card-row animal-card-row-bottom">
+                            <span class="animal-card-key">Rancho</span>
+                            <span class="animal-card-value">@Rancho?.NombreRancho ?? "-"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string CorralId { get; set; } = string.Empty;
+
+    private bool IsAuthenticated;
+    private Corral? Corral;
+    private Rancho? Rancho;
+    private EmpresaGanadera? Empresa;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        Corral = await CorralService.GetCorralByIdAsync(CorralId);
+        if (Corral != null)
+        {
+            Rancho = await RanchoService.GetRanchoByIdAsync(Corral.IdRancho);
+            if (Rancho != null)
+            {
+                Empresa = await EmpresaService.GetEmpresaByIdAsync(Rancho.IdEmpresa);
+            }
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/organizacion");
+}

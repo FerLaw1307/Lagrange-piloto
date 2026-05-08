@@ -1,0 +1,128 @@
+@page "/organizacion/rancho/{RanchoId}"
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject RanchoService RanchoService
+@inject EmpresaService EmpresaService
+@inject PotreroService PotreroService
+@inject CorralService CorralService
+
+<PageTitle>Detalle Rancho</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <p>Redirigiendo al login...</p>
+}
+else if (Rancho == null)
+{
+    <div class="alert alert-warning">Rancho no encontrado.</div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Rancho: @Rancho.NombreRancho</h2>
+                    <p class="text-muted mb-0">Región: @Rancho.Region</p>
+                    <small class="text-muted">ID: @Rancho.IdRancho · UUID: @Rancho.UuidSistema</small>
+                    @if (Empresa != null)
+                    {
+                        <div><strong>Empresa:</strong> @Empresa.NombreEmpresa</div>
+                    }
+                </div>
+                <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-xl-6">
+                <div class="animal-card org-card-potrero h-100">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Potreros</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Registrados en este rancho</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-potrero">Potreros</span>
+                    </div>
+                    <div class="animal-card-content">
+                        @if (Potreros.Any())
+                        {
+                            @foreach (var potrero in Potreros)
+                            {
+                                <div class="animal-card-row">
+                                    <span>@potrero.NombrePotrero</span>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => NavigateToPotrero(potrero.IdPotrero)">Ver</button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-light mb-0">Aún no hay potreros registrados.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-6">
+                <div class="animal-card org-card-corral h-100">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Corrales</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Registrados en este rancho</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-corral">Corrales</span>
+                    </div>
+                    <div class="animal-card-content">
+                        @if (Corrales.Any())
+                        {
+                            @foreach (var corral in Corrales)
+                            {
+                                <div class="animal-card-row">
+                                    <span>@corral.NombreCorral</span>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => NavigateToCorral(corral.IdCorral)">Ver</button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="alert alert-light mb-0">Aún no hay corrales registrados.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string RanchoId { get; set; } = string.Empty;
+
+    private bool IsAuthenticated;
+    private Rancho? Rancho;
+    private EmpresaGanadera? Empresa;
+    private List<Potrero> Potreros = new();
+    private List<Corral> Corrales = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        Rancho = await RanchoService.GetRanchoByIdAsync(RanchoId);
+        if (Rancho != null)
+        {
+            Empresa = await EmpresaService.GetEmpresaByIdAsync(Rancho.IdEmpresa);
+            Potreros = await PotreroService.GetPotrerosByRanchoIdAsync(Rancho.IdRancho);
+            Corrales = await CorralService.GetCorralesByRanchoIdAsync(Rancho.IdRancho);
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/organizacion");
+    private void NavigateToPotrero(string id) => Navigation.NavigateTo($"/organizacion/potrero/{id}");
+    private void NavigateToCorral(string id) => Navigation.NavigateTo($"/organizacion/corral/{id}");
+}

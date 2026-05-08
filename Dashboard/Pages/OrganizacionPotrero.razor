@@ -1,0 +1,100 @@
+@page "/organizacion/potrero/{PotreroId}"
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+@inject PotreroService PotreroService
+@inject RanchoService RanchoService
+@inject EmpresaService EmpresaService
+
+<PageTitle>Detalle Potrero</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <p>Redirigiendo al login...</p>
+}
+else if (Potrero == null)
+{
+    <div class="alert alert-warning">Potrero no encontrado.</div>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>Potrero: @Potrero.NombrePotrero</h2>
+                    <p class="text-muted mb-0">Área: @Potrero.Area</p>
+                    <small class="text-muted">ID: @Potrero.IdPotrero · UUID: @Potrero.UuidSistema</small>
+                    @if (Rancho != null)
+                    {
+                        <div><strong>Rancho:</strong> @Rancho.NombreRancho</div>
+                    }
+                    @if (Empresa != null)
+                    {
+                        <div><strong>Empresa:</strong> @Empresa.NombreEmpresa</div>
+                    }
+                </div>
+                <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="animal-card org-card-potrero">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Información del Potrero</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Detalles registrados</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-potrero">Potrero</span>
+                    </div>
+                    <div class="animal-card-content">
+                        <div class="animal-card-row">
+                            <span class="animal-card-key">Nombre</span>
+                            <span class="animal-card-value">@Potrero.NombrePotrero</span>
+                        </div>
+                        <div class="animal-card-row">
+                            <span class="animal-card-key">Área</span>
+                            <span class="animal-card-value">@Potrero.Area</span>
+                        </div>
+                        <div class="animal-card-row animal-card-row-bottom">
+                            <span class="animal-card-key">Rancho</span>
+                            <span class="animal-card-value">@Rancho?.NombreRancho ?? "-"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string PotreroId { get; set; } = string.Empty;
+
+    private bool IsAuthenticated;
+    private Potrero? Potrero;
+    private Rancho? Rancho;
+    private EmpresaGanadera? Empresa;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+
+        Potrero = await PotreroService.GetPotreroByIdAsync(PotreroId);
+        if (Potrero != null)
+        {
+            Rancho = await RanchoService.GetRanchoByIdAsync(Potrero.IdRancho);
+            if (Rancho != null)
+            {
+                Empresa = await EmpresaService.GetEmpresaByIdAsync(Rancho.IdEmpresa);
+            }
+        }
+    }
+
+    private void GoBack() => Navigation.NavigateTo("/organizacion");
+}
