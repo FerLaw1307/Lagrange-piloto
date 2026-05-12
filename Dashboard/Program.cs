@@ -16,5 +16,8 @@ builder.Services.AddScoped<EmpresaService>();
 builder.Services.AddScoped<RanchoService>();
 builder.Services.AddScoped<PotreroService>();
 builder.Services.AddScoped<CorralService>();
+builder.Services.AddLogging(x => x.SetMinimumLevel(LogLevel.Warning));
+  
+var app = builder.Build();
 
-await builder.Build().RunAsync();
+await app.RunAsync();
