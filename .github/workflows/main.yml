@@ -10,17 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+      with:
+        persist-credentials: false
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '9.0.x'
-    
+
     - name: Publish
       run: dotnet publish Dashboard/Dashboard.csproj -c Release -o release --nologo
-    
+
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./release/wwwroot
+        publish_branch: gh-pages
+        keep_files: false
