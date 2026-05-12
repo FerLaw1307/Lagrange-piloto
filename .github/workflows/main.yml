@@ -23,6 +23,10 @@ jobs:
     - name: Publish
       run: dotnet publish Dashboard/Dashboard.csproj -c Release -o release --nologo
 
+    - name: Add SPA fallback for GitHub Pages
+      run: |
+        cp release/wwwroot/index.html release/wwwroot/404.html
+
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
