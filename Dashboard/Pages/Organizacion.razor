@@ -21,11 +21,7 @@ else
                     <h2 class="mb-1">Organización</h2>
                     <p class="text-muted mb-0">Administra empresas ganaderas, ranchos, potreros y corrales desde la misma sección.</p>
                 </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-primary" @onclick="OpenEmpresaModal">Agregar empresa</button>
-                    <button class="btn btn-secondary" @onclick="OpenRanchoModal" disabled="@(Empresas.Count == 0)">Agregar rancho</button>
-                    <button class="btn btn-info text-white" @onclick="OpenPotreroModal" disabled="@(Ranchos.Count == 0)">Agregar potrero</button>
-                    <button class="btn btn-warning text-dark" @onclick="OpenCorralModal" disabled="@(Ranchos.Count == 0)">Agregar corral</button>
+                <div class="d-flex align-items-center gap-2">
                     <button class="btn btn-outline-primary" @onclick="LoadDataAsync">Actualizar</button>
                 </div>
             </div>
@@ -33,7 +29,7 @@ else
 
         <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-4 mb-5">
             <div class="col">
-                <div class="animal-card org-card-empresa h-100">
+                <div class="animal-card action-card org-card-empresa h-100">
                     <div class="animal-card-header">
                         <div>
                             <h5 class="animal-card-title mb-1">Empresas</h5>
@@ -41,16 +37,14 @@ else
                         </div>
                         <span class="animal-card-badge badge-empresa">@Empresas.Count</span>
                     </div>
-                    <div class="animal-card-content">
-                        <div class="animal-card-row animal-card-row-bottom">
-                            <span class="animal-card-key">Total</span>
-                            <span class="animal-card-value">@Empresas.Count</span>
-                        </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Añade y administra a las empresas que forman parte de tu organización.</p>
+                        <button class="btn btn-primary w-100 action-card-cta" @onclick="OpenEmpresaModal">Añadir empresa</button>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="animal-card org-card-rancho h-100">
+                <div class="animal-card action-card org-card-rancho h-100">
                     <div class="animal-card-header">
                         <div>
                             <h5 class="animal-card-title mb-1">Ranchos</h5>
@@ -58,16 +52,14 @@ else
                         </div>
                         <span class="animal-card-badge badge-rancho">@Ranchos.Count</span>
                     </div>
-                    <div class="animal-card-content">
-                        <div class="animal-card-row animal-card-row-bottom">
-                            <span class="animal-card-key">Total</span>
-                            <span class="animal-card-value">@Ranchos.Count</span>
-                        </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Registra ranchos pertenecientes a las empresas ganaderas existentes.</p>
+                        <button class="btn btn-secondary w-100 action-card-cta" @onclick="OpenRanchoModal" disabled="@(Empresas.Count == 0)">Añadir rancho</button>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="animal-card org-card-potrero h-100">
+                <div class="animal-card action-card org-card-potrero h-100">
                     <div class="animal-card-header">
                         <div>
                             <h5 class="animal-card-title mb-1">Potreros</h5>
@@ -75,16 +67,14 @@ else
                         </div>
                         <span class="animal-card-badge badge-potrero">@Potreros.Count</span>
                     </div>
-                    <div class="animal-card-content">
-                        <div class="animal-card-row animal-card-row-bottom">
-                            <span class="animal-card-key">Total</span>
-                            <span class="animal-card-value">@Potreros.Count</span>
-                        </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Crea potreros y organiza el ganado dentro de cada rancho.</p>
+                        <button class="btn btn-info text-white w-100 action-card-cta" @onclick="OpenPotreroModal" disabled="@(Ranchos.Count == 0)">Añadir potrero</button>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="animal-card org-card-corral h-100">
+                <div class="animal-card action-card org-card-corral h-100">
                     <div class="animal-card-header">
                         <div>
                             <h5 class="animal-card-title mb-1">Corrales</h5>
@@ -92,11 +82,9 @@ else
                         </div>
                         <span class="animal-card-badge badge-corral">@Corrales.Count</span>
                     </div>
-                    <div class="animal-card-content">
-                        <div class="animal-card-row animal-card-row-bottom">
-                            <span class="animal-card-key">Total</span>
-                            <span class="animal-card-value">@Corrales.Count</span>
-                        </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Define corrales para manejar lotes y animales dentro del rancho.</p>
+                        <button class="btn btn-warning text-dark w-100 action-card-cta" @onclick="OpenCorralModal" disabled="@(Ranchos.Count == 0)">Añadir corral</button>
                     </div>
                 </div>
             </div>
