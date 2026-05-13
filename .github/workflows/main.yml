@@ -21,6 +21,8 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: Publish
+      env:
+        BASE_HREF: "/Lagrange-piloto/"
       run: dotnet publish Dashboard/Dashboard.csproj -c Release -o release --nologo
 
     - name: Add SPA fallback for GitHub Pages
