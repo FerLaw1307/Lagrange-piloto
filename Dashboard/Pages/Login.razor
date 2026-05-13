@@ -114,8 +114,8 @@
     {
         if (await AuthService.IsAuthenticatedAsync())
         {
-            //Console.WriteLine(Navigation.BaseUri);
-            Navigation.NavigateTo("~/home");
+            Console.WriteLine(Navigation.BaseUri);
+            Navigation.NavigateTo("/home");
         }
     }
 
@@ -129,7 +129,7 @@
             var success = await AuthService.LoginAsync(LoginModel.Username, LoginModel.Password);
             if (success)
             {
-                Navigation.NavigateTo("~/home");
+                Navigation.NavigateTo("/home");
             }
             else
             {
