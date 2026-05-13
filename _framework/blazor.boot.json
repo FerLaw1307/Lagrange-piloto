@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "Dashboard",
   "resources": {
-    "hash": "sha256-1Iw0PFCB36f2I6VOnRnELLK+xsqIuOvpzOcH0Bq8+xs=",
+    "hash": "sha256-Mh80PCaFSAe3Sawfd4ScJny25paGBV3Tg/IbbqVdYLs=",
     "fingerprinting": {
       "BCrypt.Net-Next.dwn6rgs717.wasm": "BCrypt.Net-Next.wasm",
       "Microsoft.AspNetCore.Components.nuvo7zxw4f.wasm": "Microsoft.AspNetCore.Components.wasm",
@@ -50,7 +50,7 @@
       "System.dqfxtvioy0.wasm": "System.wasm",
       "netstandard.s7mmb6k2l1.wasm": "netstandard.wasm",
       "System.Private.CoreLib.b5hi1hav9u.wasm": "System.Private.CoreLib.wasm",
-      "Dashboard.sqbjkkijx5.wasm": "Dashboard.wasm",
+      "Dashboard.s9clly1c2n.wasm": "Dashboard.wasm",
       "dotnet.js": "dotnet.js",
       "dotnet.native.l1ds2rhypd.js": "dotnet.native.js",
       "dotnet.native.etgrtk5jba.wasm": "dotnet.native.wasm",
@@ -123,7 +123,7 @@
       "System.Threading.fc7xv20kgn.wasm": "sha256-kZV/RzEVrmrCpYrO/hzO+TBN2qUD+UP1MmZqksYAMzg=",
       "System.dqfxtvioy0.wasm": "sha256-5QZAjy4n7513fYxCXSXTsAkUmRsLiZ8m621Ot4k7FB0=",
       "netstandard.s7mmb6k2l1.wasm": "sha256-+JwMzEwC+0B3GgY3cUYIq3mwT7TvqZ9QjlGp0x7AWQ4=",
-      "Dashboard.sqbjkkijx5.wasm": "sha256-zPnZ8Nl93nnchw2vG95UAvQIvW6hBxv/xEko+CrFCG8="
+      "Dashboard.s9clly1c2n.wasm": "sha256-YD6L0FJGPSsOvK8NMMqe9/wS/0wZsHKePqqnP7SgP3o="
     }
   },
   "cacheBootResources": true,
