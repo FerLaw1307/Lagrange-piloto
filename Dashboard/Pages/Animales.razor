@@ -127,7 +127,7 @@ else
         IsAuthenticated = await AuthService.IsAuthenticatedAsync();
         if (!IsAuthenticated)
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo("");
             return;
         }
 

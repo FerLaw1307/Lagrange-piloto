@@ -81,7 +81,7 @@ else
         IsAuthenticated = await AuthService.IsAuthenticatedAsync();
         if (!IsAuthenticated)
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo("");
             return;
         }
 
@@ -96,5 +96,5 @@ else
         }
     }
 
-    private void GoBack() => Navigation.NavigateTo("/organizacion");
+    private void GoBack() => Navigation.NavigateTo("organizacion");
 }

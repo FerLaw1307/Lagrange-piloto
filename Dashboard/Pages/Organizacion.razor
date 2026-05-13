@@ -478,7 +478,7 @@ else
         IsAuthenticated = await AuthService.IsAuthenticatedAsync();
         if (!IsAuthenticated)
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo("");
             return;
         }
 
@@ -600,10 +600,10 @@ else
         CloseModal();
     }
 
-    private void NavigateToEmpresa(string id) => Navigation.NavigateTo($"/organizacion/empresa/{id}");
-    private void NavigateToRancho(string id) => Navigation.NavigateTo($"/organizacion/rancho/{id}");
-    private void NavigateToPotrero(string id) => Navigation.NavigateTo($"/organizacion/potrero/{id}");
-    private void NavigateToCorral(string id) => Navigation.NavigateTo($"/organizacion/corral/{id}");
+    private void NavigateToEmpresa(string id) => Navigation.NavigateTo($"organizacion/empresa/{id}");
+    private void NavigateToRancho(string id) => Navigation.NavigateTo($"organizacion/rancho/{id}");
+    private void NavigateToPotrero(string id) => Navigation.NavigateTo($"organizacion/potrero/{id}");
+    private void NavigateToCorral(string id) => Navigation.NavigateTo($"organizacion/corral/{id}");
 
     private static string CreateId(string prefix)
     {
