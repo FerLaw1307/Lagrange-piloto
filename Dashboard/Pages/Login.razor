@@ -114,7 +114,8 @@
     {
         if (await AuthService.IsAuthenticatedAsync())
         {
-            Navigation.NavigateTo("/home");
+            //Console.WriteLine(Navigation.BaseUri);
+            Navigation.NavigateTo("~/home");
         }
     }
 

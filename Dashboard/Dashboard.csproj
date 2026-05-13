@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <BaseHref Condition="'$(BaseHref)' == '' and '$(BASE_HREF)' != ''">$(BASE_HREF)</BaseHref>
+    <BaseHref Condition="'$(BaseHref)' == ''">/</BaseHref>
   </PropertyGroup>
 
   <ItemGroup>
