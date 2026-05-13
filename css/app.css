@@ -233,3 +233,38 @@ code {
 .animal-card-row-bottom {
     padding-bottom: 0;
 }
+
+.action-card {
+    position: relative;
+    border: 1px solid rgba(33, 37, 41, 0.08);
+    border-top-width: 0.4rem;
+    border-radius: 1.2rem;
+    background: #ffffff;
+    box-shadow: 0 0.8rem 1.8rem rgba(15, 23, 42, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.action-card:hover {
+    transform: translateY(-0.1rem);
+    box-shadow: 0 1.2rem 2.4rem rgba(15, 23, 42, 0.12);
+}
+
+.action-card-body {
+    padding-top: 0.75rem;
+}
+
+.action-card-body p {
+    color: #5e6571;
+    margin-bottom: 1.25rem;
+}
+
+.action-card-cta {
+    padding: 0.9rem 1rem;
+    font-weight: 700;
+}
+
+.action-card .btn:disabled {
+    opacity: 0.65;
+    pointer-events: none;
+}
