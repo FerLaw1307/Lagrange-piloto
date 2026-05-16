@@ -259,6 +259,26 @@ code {
     margin-bottom: 1.25rem;
 }
 
+.map-container {
+    width: 100%;
+    min-height: 420px;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 0.65rem 1.6rem rgba(15, 23, 42, 0.08);
+    background: #f8f9fa;
+}
+
+.map-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 420px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+
 .action-card-cta {
     padding: 0.9rem 1rem;
     font-weight: 700;
