@@ -2,6 +2,7 @@
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
 @inject EmpresaService EmpresaService
 @inject RanchoService RanchoService
 @inject PotreroService PotreroService
@@ -104,7 +105,16 @@ else
                     <div class="map-container" @ref="MapDiv">
                         @if (!MapInitialized)
                         {
-                            <div class="map-empty-state">Cargando mapa...</div>
+                            <div class="map-empty-state">
+                                @if (!GoogleMapsApiKeySet)
+                                {
+                                    <span>Google Maps necesita una API key válida. Configura <code>GoogleMaps:ApiKey</code> en <code>wwwroot/appsettings.json</code> o como secreto en GitHub Actions.</span>
+                                }
+                                else
+                                {
+                                    <span>Cargando mapa...</span>
+                                }
+                            </div>
                         }
                     </div>
                 </section>
@@ -514,6 +524,9 @@ else
     private ElementReference MapDiv;
     private bool MapInitialized = false;
 
+    private string GoogleMapsApiKey => Configuration["GoogleMaps:ApiKey"] ?? string.Empty;
+    private bool GoogleMapsApiKeySet => !string.IsNullOrWhiteSpace(GoogleMapsApiKey) && GoogleMapsApiKey != "YOUR_GOOGLE_MAPS_API_KEY";
+
     private record MapMarker(string Type, string Title, string Subtitle, double Latitude, double Longitude);
 
     protected override async Task OnInitializedAsync()
@@ -532,7 +545,14 @@ else
     {
         if (firstRender && IsAuthenticated)
         {
-            await InitializeMapAsync();
+            if (GoogleMapsApiKeySet)
+            {
+                await InitializeMapAsync();
+            }
+            else
+            {
+                StateHasChanged();
+            }
         }
     }
 
@@ -552,7 +572,7 @@ else
 
     private async Task InitializeMapAsync()
     {
-        await JSRuntime.InvokeVoidAsync("mapInterop.initializeMap", MapDiv, GetMapMarkers());
+        await JSRuntime.InvokeVoidAsync("mapInterop.initializeMap", MapDiv, GoogleMapsApiKey, GetMapMarkers());
         MapInitialized = true;
     }
 

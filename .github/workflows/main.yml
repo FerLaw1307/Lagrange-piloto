@@ -25,6 +25,23 @@ jobs:
         BASE_HREF: "/Lagrange-piloto/"
       run: dotnet publish Dashboard/Dashboard.csproj -c Release -o release --nologo
 
+    - name: Validate Google Maps API key secret
+      run: |
+        if [ -z "${{ secrets.GOOGLE_MAPS_API_KEY }}" ]; then
+          echo "ERROR: GOOGLE_MAPS_API_KEY secret is not set. Please define it in repository settings." >&2
+          exit 1
+        fi
+
+    - name: Inject Google Maps API key
+      run: |
+        cat > release/wwwroot/appsettings.json <<'EOF'
+{
+  "GoogleMaps": {
+    "ApiKey": "${{ secrets.GOOGLE_MAPS_API_KEY }}"
+  }
+}
+EOF
+
     - name: Add SPA fallback for GitHub Pages
       run: |
         cp release/wwwroot/index.html release/wwwroot/404.html
