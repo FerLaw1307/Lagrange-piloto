@@ -35,12 +35,12 @@ jobs:
     - name: Inject Google Maps API key
       run: |
         cat > release/wwwroot/appsettings.json <<'EOF'
-{
-  "GoogleMaps": {
-    "ApiKey": "${{ secrets.GOOGLE_MAPS_API_KEY }}"
-  }
-}
-EOF
+        {
+          "GoogleMaps": {
+            "ApiKey": "${{ secrets.GOOGLE_MAPS_API_KEY }}"
+          }
+        }
+        EOF
 
     - name: Add SPA fallback for GitHub Pages
       run: |
