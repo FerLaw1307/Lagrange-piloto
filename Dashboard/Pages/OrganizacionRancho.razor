@@ -1,6 +1,7 @@
 @page "/organizacion/rancho/{RanchoId}"
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @inject RanchoService RanchoService
 @inject EmpresaService EmpresaService
 @inject PotreroService PotreroService
@@ -19,76 +20,246 @@ else if (Rancho == null)
 else
 {
     <div class="container-fluid">
-        <div class="row mb-4">
-            <div class="col-12 d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>Rancho: @Rancho.NombreRancho</h2>
-                    <p class="text-muted mb-0">Región: @Rancho.Region</p>
-                    <small class="text-muted">ID: @Rancho.IdRancho · UUID: @Rancho.UuidSistema</small>
-                    @if (Empresa != null)
-                    {
-                        <div><strong>Empresa:</strong> @Empresa.NombreEmpresa</div>
-                    }
+        <!-- Header con información del recurso -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <button class="btn btn-link text-muted p-0 mb-2" @onclick="GoBack">← Volver</button>
+                        <h2 class="mb-1">@Rancho.NombreRancho</h2>
+                        <p class="text-muted mb-0">
+                            @if (Empresa != null)
+                            {
+                                <span>@Empresa.NombreEmpresa / </span>
+                            }
+                            <span>Rancho · @Rancho.Region</span>
+                        </p>
+                    </div>
                 </div>
-                <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
             </div>
         </div>
 
-        <div class="row g-4">
-            <div class="col-12 col-xl-6">
-                <div class="animal-card org-card-potrero h-100">
-                    <div class="animal-card-header">
-                        <div>
-                            <h5 class="animal-card-title mb-1">Potreros</h5>
-                            <p class="animal-card-subtitle mb-0"><small>Registrados en este rancho</small></p>
-                        </div>
-                        <span class="animal-card-badge badge-potrero">Potreros</span>
-                    </div>
-                    <div class="animal-card-content">
-                        @if (Potreros.Any())
-                        {
-                            @foreach (var potrero in Potreros)
-                            {
-                                <div class="animal-card-row">
-                                    <span>@potrero.NombrePotrero</span>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => NavigateToPotrero(potrero.IdPotrero)">Ver</button>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="alert alert-light mb-0">Aún no hay potreros registrados.</div>
-                        }
+        <!-- Barra de acciones principal -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary" @onclick="EditarRancho">Editar</button>
+                    <button class="btn btn-outline-danger" @onclick="EliminarRancho">Eliminar</button>
+                    <button class="btn btn-outline-secondary" @onclick="CopiarId">Copiar ID</button>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-secondary" @onclick="RefreshData">Actualizar</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="col-12 col-xl-6">
-                <div class="animal-card org-card-corral h-100">
-                    <div class="animal-card-header">
-                        <div>
-                            <h5 class="animal-card-title mb-1">Corrales</h5>
-                            <p class="animal-card-subtitle mb-0"><small>Registrados en este rancho</small></p>
-                        </div>
-                        <span class="animal-card-badge badge-corral">Corrales</span>
-                    </div>
-                    <div class="animal-card-content">
-                        @if (Corrales.Any())
-                        {
-                            @foreach (var corral in Corrales)
-                            {
-                                <div class="animal-card-row">
-                                    <span>@corral.NombreCorral</span>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => NavigateToCorral(corral.IdCorral)">Ver</button>
+        <!-- Tabs de navegación -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="border-bottom">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(ActiveTab == "resumen" ? "active" : "")" 
+                                    id="resumen-tab" 
+                                    @onclick="@(async e => SelectTab("resumen"))"
+                                    type="button" role="tab">
+                                Resumen
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(ActiveTab == "potreros" ? "active" : "")" 
+                                    id="potreros-tab" 
+                                    @onclick="@(async e => SelectTab("potreros"))"
+                                    type="button" role="tab">
+                                Potreros <span class="badge bg-primary ms-2">@Potreros.Count</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(ActiveTab == "corrales" ? "active" : "")" 
+                                    id="corrales-tab" 
+                                    @onclick="@(async e => SelectTab("corrales"))"
+                                    type="button" role="tab">
+                                Corrales <span class="badge bg-warning ms-2">@Corrales.Count</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido de las tabs -->
+        <div class="row">
+            <div class="col-12">
+                <!-- Tab: Resumen -->
+                @if (ActiveTab == "resumen")
+                {
+                    <div class="tab-pane active" id="resumen" role="tabpanel">
+                        <div class="row g-4">
+                            <!-- Panel Información General -->
+                            <div class="col-12 col-lg-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0 fw-bold">Información General</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <label class="form-label text-muted small">Nombre</label>
+                                                <p class="fw-bold">@Rancho.NombreRancho</p>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-6">
+                                                <label class="form-label text-muted small">Región</label>
+                                                <p>@Rancho.Region</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label text-muted small">Empresa</label>
+                                                <p>@(Empresa?.NombreEmpresa ?? "-")</p>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-0">
+                                            <div class="col-6">
+                                                <label class="form-label text-muted small">Latitud</label>
+                                                <p>@Rancho.Latitude</p>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label text-muted small">Longitud</label>
+                                                <p>@Rancho.Longitude</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            }
+                            </div>
+
+                            <!-- Panel Identificadores -->
+                            <div class="col-12 col-lg-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0 fw-bold">Identificadores</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small">ID Rancho</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" value="@Rancho.IdRancho" readonly />
+                                                <button class="btn btn-outline-secondary" type="button" @onclick="() => CopiarAlPortapapeles(Rancho.IdRancho)">
+                                                    Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small">UUID Sistema</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" value="@Rancho.UuidSistema" readonly />
+                                                <button class="btn btn-outline-secondary" type="button" @onclick="() => CopiarAlPortapapeles(Rancho.UuidSistema)">
+                                                    Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small">ID Empresa</label>
+                                            <p class="small">@Rancho.IdEmpresa</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Panel Estadísticas -->
+                            <div class="col-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0 fw-bold">Estadísticas</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center">
+                                            <div class="col-6 col-md-3">
+                                                <div class="d-flex flex-column">
+                                                    <h5 class="mb-0">@Potreros.Count</h5>
+                                                    <small class="text-muted">Potreros</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <div class="d-flex flex-column">
+                                                    <h5 class="mb-0">@Corrales.Count</h5>
+                                                    <small class="text-muted">Corrales</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Tab: Potreros -->
+                @if (ActiveTab == "potreros")
+                {
+                    <div class="tab-pane active" id="potreros" role="tabpanel">
+                        @if (Potreros.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var potrero in Potreros)
+                                {
+                                    <div class="col-12 col-md-6 col-lg-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">@potrero.NombrePotrero</h6>
+                                                <p class="card-text small text-muted">@potrero.Area</p>
+                                                <div class="small mb-3">
+                                                    <p><strong>Lat:</strong> @potrero.Latitude.ToString("F6")</p>
+                                                    <p><strong>Lng:</strong> @potrero.Longitude.ToString("F6")</p>
+                                                </div>
+                                                <button class="btn btn-sm btn-primary w-100" @onclick="() => NavigateToPotrero(potrero.IdPotrero)">
+                                                    Ver detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
                         }
                         else
                         {
-                            <div class="alert alert-light mb-0">Aún no hay corrales registrados.</div>
+                            <div class="alert alert-info mb-0">No hay potreros registrados en este rancho.</div>
                         }
                     </div>
-                </div>
+                }
+
+                <!-- Tab: Corrales -->
+                @if (ActiveTab == "corrales")
+                {
+                    <div class="tab-pane active" id="corrales" role="tabpanel">
+                        @if (Corrales.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var corral in Corrales)
+                                {
+                                    <div class="col-12 col-md-6 col-lg-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">@corral.NombreCorral</h6>
+                                                <p class="card-text small text-muted">@corral.Capacidad</p>
+                                                <div class="small mb-3">
+                                                    <p><strong>Lat:</strong> @corral.Latitude.ToString("F6")</p>
+                                                    <p><strong>Lng:</strong> @corral.Longitude.ToString("F6")</p>
+                                                </div>
+                                                <button class="btn btn-sm btn-primary w-100" @onclick="() => NavigateToCorral(corral.IdCorral)">
+                                                    Ver detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-0">No hay corrales registrados en este rancho.</div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -103,6 +274,7 @@ else
     private EmpresaGanadera? Empresa;
     private List<Potrero> Potreros = new();
     private List<Corral> Corrales = new();
+    private string ActiveTab = "resumen";
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,6 +285,11 @@ else
             return;
         }
 
+        await LoadRanchoData();
+    }
+
+    private async Task LoadRanchoData()
+    {
         Rancho = await RanchoService.GetRanchoByIdAsync(RanchoId);
         if (Rancho != null)
         {
@@ -122,7 +299,41 @@ else
         }
     }
 
+    private void SelectTab(string tabName) => ActiveTab = tabName;
     private void GoBack() => Navigation.NavigateTo("/organizacion");
     private void NavigateToPotrero(string id) => Navigation.NavigateTo($"organizacion/potrero/{id}");
     private void NavigateToCorral(string id) => Navigation.NavigateTo($"organizacion/corral/{id}");
+
+    private void EditarRancho()
+    {
+        // Implementar funcionalidad de editar
+    }
+
+    private async Task EliminarRancho()
+    {
+        if (Rancho != null && await JSRuntime.InvokeAsync<bool>("confirm", $"¿Estás seguro de que deseas eliminar el rancho {Rancho.NombreRancho}?"))
+        {
+            // Implementar funcionalidad de eliminar
+        }
+    }
+
+    private async Task CopiarId()
+    {
+        if (Rancho != null)
+        {
+            await CopiarAlPortapapeles(Rancho.IdRancho);
+        }
+    }
+
+    private async Task CopiarAlPortapapeles(string texto)
+    {
+        // Implementar copia al portapapeles
+        await Task.CompletedTask;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadRanchoData();
+        StateHasChanged();
+    }
 }

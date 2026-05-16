@@ -1,6 +1,7 @@
 @page "/organizacion/empresa/{EmpresaId}"
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @inject EmpresaService EmpresaService
 @inject RanchoService RanchoService
 
@@ -17,47 +18,183 @@ else if (Empresa == null)
 else
 {
     <div class="container-fluid">
-        <div class="row mb-4">
-            <div class="col-12 d-flex justify-content-between align-items-center">
-                <div>
-                    <h2>Empresa: @Empresa.NombreEmpresa</h2>
-                    <p class="text-muted mb-0">Ubicación: @Empresa.Ubicacion</p>
-                    <small class="text-muted">ID: @Empresa.IdEmpresa · UUID: @Empresa.UuidSistema</small>
+        <!-- Header con información del recurso -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <button class="btn btn-link text-muted p-0 mb-2" @onclick="GoBack">← Volver</button>
+                        <h2 class="mb-1">@Empresa.NombreEmpresa</h2>
+                        <p class="text-muted mb-0">
+                            <span>Empresa Ganadera · @Empresa.Ubicacion</span>
+                        </p>
+                    </div>
                 </div>
-                <button class="btn btn-secondary" @onclick="GoBack">Volver</button>
             </div>
         </div>
 
-        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-            @foreach (var rancho in Ranchos)
-            {
-                <div class="col">
-                    <div class="animal-card org-card-rancho h-100">
-                        <div class="animal-card-header">
-                            <div>
-                                <h5 class="animal-card-title mb-1">@rancho.NombreRancho</h5>
-                                <p class="animal-card-subtitle mb-0"><small>@rancho.Region</small></p>
+        <!-- Barra de acciones principal -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary" @onclick="EditarEmpresa">Editar</button>
+                    <button class="btn btn-outline-danger" @onclick="EliminarEmpresa">Eliminar</button>
+                    <button class="btn btn-outline-secondary" @onclick="CopiarId">Copiar ID</button>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-secondary" @onclick="RefreshData">Actualizar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs de navegación -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="border-bottom">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(ActiveTab == "resumen" ? "active" : "")" 
+                                    id="resumen-tab" 
+                                    @onclick="@(async e => SelectTab("resumen"))"
+                                    type="button" role="tab">
+                                Resumen
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(ActiveTab == "ranchos" ? "active" : "")" 
+                                    id="ranchos-tab" 
+                                    @onclick="@(async e => SelectTab("ranchos"))"
+                                    type="button" role="tab">
+                                Ranchos <span class="badge bg-primary ms-2">@Ranchos.Count</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido de las tabs -->
+        <div class="row">
+            <div class="col-12">
+                <!-- Tab: Resumen -->
+                @if (ActiveTab == "resumen")
+                {
+                    <div class="tab-pane active" id="resumen" role="tabpanel">
+                        <div class="row g-4">
+                            <!-- Panel Información General -->
+                            <div class="col-12 col-lg-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0 fw-bold">Información General</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <label class="form-label text-muted small">Nombre</label>
+                                                <p class="fw-bold">@Empresa.NombreEmpresa</p>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <label class="form-label text-muted small">Ubicación</label>
+                                                <p>@Empresa.Ubicacion</p>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-0">
+                                            <div class="col-12">
+                                                <label class="form-label text-muted small">Descripción</label>
+                                                <p>@(string.IsNullOrEmpty(Empresa.NombreEmpresa) ? "-" : Empresa.NombreEmpresa)</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <span class="animal-card-badge badge-rancho">Rancho</span>
-                        </div>
-                        <div class="animal-card-content">
-                            <div class="animal-card-row">
-                                <span class="animal-card-key">ID</span>
-                                <span class="animal-card-value"><code>@rancho.IdRancho</code></span>
+
+                            <!-- Panel Identificadores -->
+                            <div class="col-12 col-lg-6">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0 fw-bold">Identificadores</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small">ID Empresa</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" value="@Empresa.IdEmpresa" readonly />
+                                                <button class="btn btn-outline-secondary" type="button" @onclick="@(async e => await CopiarAlPortapapeles(Empresa.IdEmpresa))">
+                                                    Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label text-muted small">UUID Sistema</label>
+                                            <div class="input-group input-group-sm">
+                                                <input type="text" class="form-control" value="@Empresa.UuidSistema" readonly />
+                                                <button class="btn btn-outline-secondary" type="button" @onclick="@(async e => await CopiarAlPortapapeles(Empresa.UuidSistema))">
+                                                    Copiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="animal-card-row animal-card-row-bottom">
-                                <button class="btn btn-sm btn-outline-primary w-100" @onclick="() => NavigateToRancho(rancho.IdRancho)">Ver detalle</button>
+
+                            <!-- Panel Estadísticas -->
+                            <div class="col-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0 fw-bold">Estadísticas</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center">
+                                            <div class="col-6 col-md-3">
+                                                <div class="d-flex flex-column">
+                                                    <h5 class="mb-0">@Ranchos.Count</h5>
+                                                    <small class="text-muted">Ranchos</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            }
-            @if (!Ranchos.Any())
-            {
-                <div class="col-12">
-                    <div class="alert alert-info">No hay ranchos registrados para esta empresa.</div>
-                </div>
-            }
+                }
+
+                <!-- Tab: Ranchos -->
+                @if (ActiveTab == "ranchos")
+                {
+                    <div class="tab-pane active" id="ranchos" role="tabpanel">
+                        @if (Ranchos.Any())
+                        {
+                            <div class="row g-3">
+                                @foreach (var rancho in Ranchos)
+                                {
+                                    <div class="col-12 col-md-6 col-lg-4">
+                                        <div class="card shadow-sm h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-title">@rancho.NombreRancho</h6>
+                                                <p class="card-text small text-muted">@rancho.Region</p>
+                                                <div class="small mb-3">
+                                                    <p><strong>Lat:</strong> @rancho.Latitude.ToString("F6")</p>
+                                                    <p><strong>Lng:</strong> @rancho.Longitude.ToString("F6")</p>
+                                                </div>
+                                                <button class="btn btn-sm btn-primary w-100" @onclick="() => NavigateToRancho(rancho.IdRancho)">
+                                                    Ver detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info mb-0">No hay ranchos registrados para esta empresa.</div>
+                        }
+                    </div>
+                }
+            </div>
         </div>
     </div>
 }
@@ -69,6 +206,7 @@ else
     private bool IsAuthenticated;
     private EmpresaGanadera? Empresa;
     private List<Rancho> Ranchos = new();
+    private string ActiveTab = "resumen";
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,10 +217,49 @@ else
             return;
         }
 
+        await LoadEmpresaData();
+    }
+
+    private async Task LoadEmpresaData()
+    {
         Empresa = await EmpresaService.GetEmpresaByIdAsync(EmpresaId);
         Ranchos = Empresa != null ? await RanchoService.GetRanchosByEmpresaIdAsync(Empresa.IdEmpresa) : new List<Rancho>();
     }
 
+    private void SelectTab(string tabName) => ActiveTab = tabName;
     private void GoBack() => Navigation.NavigateTo("/organizacion");
     private void NavigateToRancho(string id) => Navigation.NavigateTo($"/organizacion/rancho/{id}");
+
+    private void EditarEmpresa()
+    {
+        // Implementar funcionalidad de editar
+    }
+
+    private async Task EliminarEmpresa()
+    {
+        if (Empresa != null && await JSRuntime.InvokeAsync<bool>("confirm", $"¿Estás seguro de que deseas eliminar la empresa {Empresa.NombreEmpresa}?"))
+        {
+            // Implementar funcionalidad de eliminar
+        }
+    }
+
+    private async Task CopiarId()
+    {
+        if (Empresa != null)
+        {
+            await CopiarAlPortapapeles(Empresa.IdEmpresa);
+        }
+    }
+
+    private async Task CopiarAlPortapapeles(string texto)
+    {
+        // Implementar copia al portapapeles
+        await Task.CompletedTask;
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadEmpresaData();
+        StateHasChanged();
+    }
 }
