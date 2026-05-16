@@ -1,64 +1,110 @@
 window.mapInterop = {
     map: null,
-    markerLayer: null,
+    markers: [],
 
-    initializeMap: function (element, markers) {
+    initializeMap: async function (element, apiKey, markers) {
         if (!element) return;
 
-        this.map = L.map(element).setView([10.0, -84.0], 6);
+        await this._loadGoogleMapsAsync(apiKey);
+        if (!window.google || !window.google.maps) {
+            console.error('Google Maps failed to load.');
+            return;
+        }
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(this.map);
+        this.map = new google.maps.Map(element, {
+            center: { lat: 10.0, lng: -84.0 },
+            zoom: 6,
+            mapTypeId: 'roadmap'
+        });
 
-        this.markerLayer = L.layerGroup().addTo(this.map);
         this._updateMarkers(markers);
     },
 
     updateMarkers: function (markers) {
         if (!this.map) {
-            console.warn('Leaflet map is not initialized yet.');
+            console.warn('Google Maps is not initialized yet.');
             return;
         }
+
         this._updateMarkers(markers);
     },
 
     _updateMarkers: function (markers) {
-        if (!this.markerLayer) {
-            this.markerLayer = L.layerGroup().addTo(this.map);
-        }
-
-        this.markerLayer.clearLayers();
-
-        if (!markers || !Array.isArray(markers) || markers.length === 0) {
+        if (!Array.isArray(markers)) {
             return;
         }
 
-        var bounds = [];
-        markers.forEach(function (marker) {
-            if (typeof marker.latitude !== 'number' || typeof marker.longitude !== 'number') {
+        this.markers.forEach(function (marker) {
+            marker.setMap(null);
+        });
+        this.markers = [];
+
+        if (markers.length === 0) {
+            return;
+        }
+
+        var bounds = new google.maps.LatLngBounds();
+
+        markers.forEach(function (markerData) {
+            if (typeof markerData.latitude !== 'number' || typeof markerData.longitude !== 'number') {
                 return;
             }
 
-            var icon = L.icon({
-                iconUrl: marker.type === 'corral'
-                    ? 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png'
-                    : 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-                shadowSize: [41, 41]
+            var position = { lat: markerData.latitude, lng: markerData.longitude };
+            var marker = new google.maps.Marker({
+                position: position,
+                map: this.map,
+                title: markerData.title
             });
 
-            var popupText = '<strong>' + marker.title + '</strong><br/>' + marker.subtitle;
-            var leafletMarker = L.marker([marker.latitude, marker.longitude], { icon: icon }).bindPopup(popupText);
-            leafletMarker.addTo(this.markerLayer);
-            bounds.push([marker.latitude, marker.longitude]);
+            var infoWindow = new google.maps.InfoWindow({
+                content: '<div><strong>' + markerData.title + '</strong><br/>' + markerData.subtitle + '</div>'
+            });
+
+            marker.addListener('click', function () {
+                infoWindow.open(this.map, marker);
+            }.bind(this));
+
+            this.markers.push(marker);
+            bounds.extend(position);
         }, this);
 
-        if (bounds.length > 0) {
-            this.map.fitBounds(bounds, { padding: [40, 40] });
+        if (!bounds.isEmpty()) {
+            this.map.fitBounds(bounds, { padding: 40 });
         }
+    },
+
+    _loadGoogleMapsAsync: function (apiKey) {
+        return new Promise(function (resolve, reject) {
+            if (window.google && window.google.maps) {
+                resolve();
+                return;
+            }
+
+            if (document.getElementById('google-maps-api')) {
+                var checkLoaded = function () {
+                    if (window.google && window.google.maps) {
+                        resolve();
+                    } else {
+                        setTimeout(checkLoaded, 50);
+                    }
+                };
+                checkLoaded();
+                return;
+            }
+
+            var script = document.createElement('script');
+            script.id = 'google-maps-api';
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(apiKey);
+            script.async = true;
+            script.defer = true;
+            script.onload = function () {
+                resolve();
+            };
+            script.onerror = function (error) {
+                reject(error);
+            };
+            document.head.appendChild(script);
+        });
     }
 };
