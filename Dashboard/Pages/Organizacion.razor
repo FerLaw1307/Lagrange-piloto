@@ -1,6 +1,7 @@
 ﻿@page "/organizacion"
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 @inject EmpresaService EmpresaService
 @inject RanchoService RanchoService
 @inject PotreroService PotreroService
@@ -87,6 +88,26 @@ else
                         <button class="btn btn-warning text-dark w-100 action-card-cta" @onclick="OpenCorralModal" disabled="@(Ranchos.Count == 0)">Añadir corral</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12">
+                <section class="action-card p-3">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <h3 class="mb-1">Mapa geográfico</h3>
+                            <p class="text-muted mb-0">Visualiza ranchos y corrales con coordenadas GPS.</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="RefreshMapAsync">Actualizar mapa</button>
+                    </div>
+                    <div class="map-container" @ref="MapDiv">
+                        @if (!MapInitialized)
+                        {
+                            <div class="map-empty-state">Cargando mapa...</div>
+                        }
+                    </div>
+                </section>
             </div>
         </div>
 
@@ -344,6 +365,16 @@ else
                         <label class="form-label">Región</label>
                         <input class="form-control" @bind="ModalRancho.Region" placeholder="Ej. Sierra Norte" />
                     </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalRancho.Latitude" placeholder="Ej. 10.100234" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalRancho.Longitude" placeholder="Ej. -84.001563" />
+                        </div>
+                    </div>
                     @if (!string.IsNullOrEmpty(ModalMessage))
                     {
                         <div class="alert alert-danger">@ModalMessage</div>
@@ -385,6 +416,16 @@ else
                     <div class="mb-3">
                         <label class="form-label">Área</label>
                         <input class="form-control" @bind="ModalPotrero.Area" placeholder="Ej. 15 hectáreas" />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalPotrero.Latitude" placeholder="Ej. 10.103012" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalPotrero.Longitude" placeholder="Ej. -84.002341" />
+                        </div>
                     </div>
                     @if (!string.IsNullOrEmpty(ModalMessage))
                     {
@@ -428,6 +469,16 @@ else
                         <label class="form-label">Capacidad</label>
                         <input class="form-control" @bind="ModalCorral.Capacidad" placeholder="Ej. 30 animales" />
                     </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalCorral.Latitude" placeholder="Ej. 10.101523" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalCorral.Longitude" placeholder="Ej. -84.000872" />
+                        </div>
+                    </div>
                     @if (!string.IsNullOrEmpty(ModalMessage))
                     {
                         <div class="alert alert-danger">@ModalMessage</div>
@@ -460,6 +511,10 @@ else
     private Corral ModalCorral = new();
 
     private string ModalMessage = string.Empty;
+    private ElementReference MapDiv;
+    private bool MapInitialized = false;
+
+    private record MapMarker(string Type, string Title, string Subtitle, double Latitude, double Longitude);
 
     protected override async Task OnInitializedAsync()
     {
@@ -473,6 +528,14 @@ else
         await LoadDataAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && IsAuthenticated)
+        {
+            await InitializeMapAsync();
+        }
+    }
+
     private async Task LoadDataAsync()
     {
         Empresas = await EmpresaService.GetAllEmpresasAsync();
@@ -480,6 +543,59 @@ else
         Potreros = await PotreroService.GetAllPotrerosAsync();
         Corrales = await CorralService.GetAllCorralesAsync();
         StateHasChanged();
+
+        if (MapInitialized)
+        {
+            await UpdateMapAsync();
+        }
+    }
+
+    private async Task InitializeMapAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("mapInterop.initializeMap", MapDiv, GetMapMarkers());
+        MapInitialized = true;
+    }
+
+    private async Task UpdateMapAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("mapInterop.updateMarkers", GetMapMarkers());
+    }
+
+    private IEnumerable<MapMarker> GetMapMarkers()
+    {
+        var markers = new List<MapMarker>();
+
+        markers.AddRange(Ranchos.Where(r => HasCoordinates(r.Latitude, r.Longitude)).Select(r =>
+            new MapMarker(
+                "rancho",
+                r.NombreRancho,
+                $"Rancho • {Empresas.FirstOrDefault(e => e.IdEmpresa == r.IdEmpresa)?.NombreEmpresa ?? "-"}",
+                r.Latitude,
+                r.Longitude)));
+
+        markers.AddRange(Corrales.Where(c => HasCoordinates(c.Latitude, c.Longitude)).Select(c =>
+            new MapMarker(
+                "corral",
+                c.NombreCorral,
+                $"Corral • {Ranchos.FirstOrDefault(r => r.IdRancho == c.IdRancho)?.NombreRancho ?? "-"}",
+                c.Latitude,
+                c.Longitude)));
+
+        return markers;
+    }
+
+    private static bool HasCoordinates(double latitude, double longitude)
+    {
+        return latitude != 0 || longitude != 0;
+    }
+
+    private async Task RefreshMapAsync()
+    {
+        await LoadDataAsync();
+        if (MapInitialized)
+        {
+            await UpdateMapAsync();
+        }
     }
 
     private void OpenEmpresaModal()

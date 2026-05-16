@@ -20,9 +20,9 @@ public class PotreroService
         {
             var sampleData = new List<Potrero>
             {
-                new Potrero { IdPotrero = "POT-001", UuidSistema = "220e8400-e29b-41d4-a716-446655440301", IdRancho = "RAN-001", NombrePotrero = "Norte", Area = "12 hectáreas" },
-                new Potrero { IdPotrero = "POT-002", UuidSistema = "220e8400-e29b-41d4-a716-446655440302", IdRancho = "RAN-001", NombrePotrero = "Sur", Area = "18 hectáreas" },
-                new Potrero { IdPotrero = "POT-003", UuidSistema = "220e8400-e29b-41d4-a716-446655440303", IdRancho = "RAN-003", NombrePotrero = "Este", Area = "10 hectáreas" }
+                new Potrero { IdPotrero = "POT-001", UuidSistema = "220e8400-e29b-41d4-a716-446655440301", IdRancho = "RAN-001", NombrePotrero = "Norte", Area = "12 hectáreas", Latitude = 10.103012, Longitude = -84.002341 },
+                new Potrero { IdPotrero = "POT-002", UuidSistema = "220e8400-e29b-41d4-a716-446655440302", IdRancho = "RAN-001", NombrePotrero = "Sur", Area = "18 hectáreas", Latitude = 10.098450, Longitude = -83.999870 },
+                new Potrero { IdPotrero = "POT-003", UuidSistema = "220e8400-e29b-41d4-a716-446655440303", IdRancho = "RAN-003", NombrePotrero = "Este", Area = "10 hectáreas", Latitude = 9.950821, Longitude = -84.088102 }
             };
             await SavePotrerosAsync(sampleData);
             return sampleData;

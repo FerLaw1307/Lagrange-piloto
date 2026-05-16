@@ -7,4 +7,6 @@ public class Potrero
     public string IdRancho { get; set; } = string.Empty;
     public string NombrePotrero { get; set; } = string.Empty;
     public string Area { get; set; } = string.Empty;
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
 }

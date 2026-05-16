@@ -20,9 +20,9 @@ public class CorralService
         {
             var sampleData = new List<Corral>
             {
-                new Corral { IdCorral = "COR-001", UuidSistema = "220e8400-e29b-41d4-a716-446655440401", IdRancho = "RAN-001", NombreCorral = "Corral 1", Capacidad = "25 animales" },
-                new Corral { IdCorral = "COR-002", UuidSistema = "220e8400-e29b-41d4-a716-446655440402", IdRancho = "RAN-001", NombreCorral = "Corral 2", Capacidad = "18 animales" },
-                new Corral { IdCorral = "COR-003", UuidSistema = "220e8400-e29b-41d4-a716-446655440403", IdRancho = "RAN-003", NombreCorral = "Corral Principal", Capacidad = "30 animales" }
+                new Corral { IdCorral = "COR-001", UuidSistema = "220e8400-e29b-41d4-a716-446655440401", IdRancho = "RAN-001", NombreCorral = "Corral 1", Capacidad = "25 animales", Latitude = 10.101523, Longitude = -84.000872 },
+                new Corral { IdCorral = "COR-002", UuidSistema = "220e8400-e29b-41d4-a716-446655440402", IdRancho = "RAN-001", NombreCorral = "Corral 2", Capacidad = "18 animales", Latitude = 10.099784, Longitude = -84.000200 },
+                new Corral { IdCorral = "COR-003", UuidSistema = "220e8400-e29b-41d4-a716-446655440403", IdRancho = "RAN-003", NombreCorral = "Corral Principal", Capacidad = "30 animales", Latitude = 9.953101, Longitude = -84.089900 }
             };
             await SaveCorralesAsync(sampleData);
             return sampleData;

@@ -20,9 +20,9 @@ public class RanchoService
         {
             var sampleData = new List<Rancho>
             {
-                new Rancho { IdRancho = "RAN-001", UuidSistema = "220e8400-e29b-41d4-a716-446655440201", IdEmpresa = "EMP-001", NombreRancho = "Rancho El Porvenir", Region = "Valle Central" },
-                new Rancho { IdRancho = "RAN-002", UuidSistema = "220e8400-e29b-41d4-a716-446655440202", IdEmpresa = "EMP-001", NombreRancho = "Rancho La Esperanza", Region = "Sierra Norte" },
-                new Rancho { IdRancho = "RAN-003", UuidSistema = "220e8400-e29b-41d4-a716-446655440203", IdEmpresa = "EMP-002", NombreRancho = "Rancho Vista Alegre", Region = "Llanura Sur" }
+                new Rancho { IdRancho = "RAN-001", UuidSistema = "220e8400-e29b-41d4-a716-446655440201", IdEmpresa = "EMP-001", NombreRancho = "Rancho El Porvenir", Region = "Valle Central", Latitude = 10.100234, Longitude = -84.001563 },
+                new Rancho { IdRancho = "RAN-002", UuidSistema = "220e8400-e29b-41d4-a716-446655440202", IdEmpresa = "EMP-001", NombreRancho = "Rancho La Esperanza", Region = "Sierra Norte", Latitude = 10.210812, Longitude = -83.927441 },
+                new Rancho { IdRancho = "RAN-003", UuidSistema = "220e8400-e29b-41d4-a716-446655440203", IdEmpresa = "EMP-002", NombreRancho = "Rancho Vista Alegre", Region = "Llanura Sur", Latitude = 9.952146, Longitude = -84.089220 }
             };
             await SaveRanchosAsync(sampleData);
             return sampleData;
