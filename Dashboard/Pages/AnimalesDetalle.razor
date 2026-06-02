@@ -1,0 +1,197 @@
+@page "/animales/detalle/{Arete}"
+@using Dashboard.Models
+@inject AnimalService AnimalService
+@inject CorralService CorralService
+@inject PotreroService PotreroService
+@inject RanchoService RanchoService
+@inject FeedingEventService FeedingEventService
+
+<PageTitle>Detalle Animal</PageTitle>
+
+<div class="container-fluid">
+    @if (IsLoading)
+    {
+        <div>Cargando...</div>
+    }
+    else if (Animal == null)
+    {
+        <div class="alert alert-warning">Animal no encontrado: @Arete</div>
+    }
+    else
+    {
+        <h3>Detalle: <strong>@Animal.Arete</strong></h3>
+
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">Resumen</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="corral-tab" data-bs-toggle="tab" data-bs-target="#corral" type="button" role="tab">Corral</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="lote-tab" data-bs-toggle="tab" data-bs-target="#lote" type="button" role="tab">Potreros / Lote</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="feed-tab" data-bs-toggle="tab" data-bs-target="#feed" type="button" role="tab">Alimentación</button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="summary" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-3">Arete</dt><dd class="col-sm-9">@Animal.Arete</dd>
+                            <dt class="col-sm-3">Raza</dt><dd class="col-sm-9">@Animal.Raza</dd>
+                            <dt class="col-sm-3">Sexo</dt><dd class="col-sm-9">@Animal.Sexo</dd>
+                            <dt class="col-sm-3">Condición</dt><dd class="col-sm-9">@(Animal.Condicion?.ToString() ?? "-")</dd>
+                            <dt class="col-sm-3">Corral</dt><dd class="col-sm-9">@(Corral?.NombreCorral ?? "-")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="corral" role="tabpanel">
+                @if (Corral == null)
+                {
+                    <div class="alert alert-secondary">Sin corral asignado.</div>
+                }
+                else
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>@Corral.NombreCorral</h5>
+                            <p class="mb-1"><strong>Id:</strong> @Corral.IdCorral</p>
+                            <p class="mb-1"><strong>Capacidad:</strong> @Corral.Capacidad</p>
+                            <p class="mb-1"><strong>Rancho:</strong> @(Rancho?.NombreRancho ?? "-")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="tab-pane fade" id="lote" role="tabpanel">
+                @if (Potreros == null || !Potreros.Any())
+                {
+                    <div class="alert alert-secondary">No hay potreros relacionados.</div>
+                }
+                else
+                {
+                    <div class="list-group">
+                        @foreach (var p in Potreros)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">@p.NombrePotrero</h6>
+                                </div>
+                                <p class="mb-1">Area: @p.Area</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="tab-pane fade" id="feed" role="tabpanel">
+                <div class="mb-3">
+                    <h5>Eventos de alimentación</h5>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (FeedingEvents == null || !FeedingEvents.Any())
+                        {
+                            <tr><td colspan="4">No hay eventos registrados.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var ev in FeedingEvents)
+                            {
+                                <tr>
+                                    <td>@ev.Fecha.ToLocalTime().ToString("g")</td>
+                                    <td>@ev.TipoAlimento</td>
+                                    <td>@ev.Cantidad</td>
+                                    <td>@ev.Notas</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Agregar evento</h6>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input class="form-control" placeholder="Tipo de alimento" @bind="NewEvent.TipoAlimento" />
+                            </div>
+                            <div class="col-md-3">
+                                <input class="form-control" placeholder="Cantidad" @bind="NewEvent.Cantidad" />
+                            </div>
+                            <div class="col-md-5">
+                                <input class="form-control" placeholder="Notas" @bind="NewEvent.Notas" />
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <button class="btn btn-sm btn-primary" @onclick="AddFeedingEvent">Agregar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Arete { get; set; } = string.Empty;
+
+    private Animal? Animal;
+    private Corral? Corral;
+    private Rancho? Rancho;
+    private List<Potrero> Potreros = new();
+    private List<FeedingEvent> FeedingEvents = new();
+    private FeedingEvent NewEvent = new();
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllAsync();
+    }
+
+    private async Task LoadAllAsync()
+    {
+        IsLoading = true;
+        Animal = await AnimalService.GetAnimalByAreteAsync(Arete);
+        if (Animal != null)
+        {
+            if (!string.IsNullOrWhiteSpace(Animal.IdCorral))
+            {
+                Corral = await CorralService.GetCorralByIdAsync(Animal.IdCorral);
+                if (Corral != null)
+                {
+                    Rancho = await RanchoService.GetRanchoByIdAsync(Corral.IdRancho);
+                    Potreros = await PotreroService.GetPotrerosByRanchoIdAsync(Corral.IdRancho);
+                }
+            }
+            FeedingEvents = await FeedingEventService.GetEventsByAreteAsync(Animal.Arete);
+        }
+        IsLoading = false;
+    }
+
+    private async Task AddFeedingEvent()
+    {
+        if (Animal == null) return;
+        NewEvent.Arete = Animal.Arete;
+        NewEvent.Fecha = DateTime.UtcNow;
+        await FeedingEventService.AddEventAsync(NewEvent);
+        NewEvent = new FeedingEvent();
+        FeedingEvents = await FeedingEventService.GetEventsByAreteAsync(Animal.Arete);
+    }
+}

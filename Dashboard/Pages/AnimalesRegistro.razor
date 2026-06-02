@@ -1,0 +1,175 @@
+@page "/animales-registro"
+@inject AnimalService AnimalService
+@inject EspecieService EspecieService
+@inject AuthenticationService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Registro de Animales</PageTitle>
+
+@if (!IsAuthenticated)
+{
+    <p>Redirigiendo al login...</p>
+}
+else
+{
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-3">Registro / Inventario de Animales</h2>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <EditForm Model="NewAnimal" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Arete (SINIIGA/ID) *</label>
+                                    <div class="input-group">
+                                        <input class="form-control" @bind="NewAnimal.Arete" />
+                                        <button type="button" class="btn btn-outline-secondary" @onclick="TriggerCamera">📷</button>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(AreteError))
+                                    {
+                                        <div class="text-danger small">@AreteError</div>
+                                    }
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Raza *</label>
+                                    <input list="razas" class="form-control" @bind="NewAnimal.Raza" />
+                                    <datalist id="razas">
+                                        @foreach (var r in Razas)
+                                        {
+                                            <option value="@r"></option>
+                                        }
+                                    </datalist>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label">Sexo *</label>
+                                    <div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="sexoM" name="sexo" @onclick='() => NewAnimal.Sexo = "Macho"' checked='@(NewAnimal.Sexo == "Macho")' />
+                                            <label class="form-check-label" for="sexoM">Macho</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" id="sexoH" name="sexo" @onclick='() => NewAnimal.Sexo = "Hembra"' checked='@(NewAnimal.Sexo == "Hembra")' />
+                                            <label class="form-check-label" for="sexoH">Hembra</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if (ShowCondicion)
+                                {
+                                    <div class="col-md-4">
+                                        <label class="form-label">Condición (Entero/Castrado)</label>
+                                        <input class="form-control" type="number" @bind="NewAnimal.Condicion" />
+                                    </div>
+                                }
+
+                                <div class="col-12 text-end">
+                                    <button class="btn btn-primary" type="submit">Registrar Animal</button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Animales registrados</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Arete</th>
+                                        <th>Raza</th>
+                                        <th>Sexo</th>
+                                        <th>Condición</th>
+                                        <th>Corral</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var a in AllAnimals)
+                                    {
+                                        <tr>
+                                            <td><strong>@a.Arete</strong></td>
+                                            <td>@a.Raza</td>
+                                            <td>@a.Sexo</td>
+                                            <td>@(a.Condicion?.ToString() ?? "-")</td>
+                                            <td>@(string.IsNullOrEmpty(a.IdCorral) ? "-" : a.IdCorral)</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-info" @onclick="() => IrAlDetalle(a.Arete)">Ver Detalle</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsAuthenticated = false;
+    private Animal NewAnimal = new();
+    private List<Animal> AllAnimals = new();
+    private List<string> Razas = new();
+    private string AreteError = string.Empty;
+
+    private bool ShowCondicion => NewAnimal.Sexo == "Macho";
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (!IsAuthenticated)
+        {
+            Navigation.NavigateTo("");
+            return;
+        }
+
+        await LoadRazasAsync();
+        await LoadAnimalsAsync();
+    }
+
+    private async Task LoadRazasAsync()
+    {
+        var especies = await EspecieService.GetAllEspeciesAsync();
+        Razas = especies.Select(e => e.NombreEspecie).Distinct().ToList();
+    }
+
+    private async Task LoadAnimalsAsync()
+    {
+        AllAnimals = await AnimalService.GetAllAnimalsAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        AreteError = string.Empty;
+        if (!await AnimalService.IsAreteUniqueAsync(NewAnimal.Arete))
+        {
+            AreteError = "El arete debe ser único. Ya existe un animal con este arete.";
+            return;
+        }
+
+        await AnimalService.AddAnimalAsync(NewAnimal);
+        NewAnimal = new();
+        await LoadAnimalsAsync();
+    }
+
+    private void TriggerCamera()
+    {
+        // Placeholder: on mobile the input file with capture can be used.
+    }
+
+    private void IrAlDetalle(string arete)
+    {
+        Navigation.NavigateTo($"/animales/detalle/{Uri.EscapeDataString(arete)}");
+    }
+}
