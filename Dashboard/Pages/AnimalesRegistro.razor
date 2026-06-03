@@ -3,6 +3,7 @@
 @inject EspecieService EspecieService
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
+@inject PotreroService PotreroService
 
 <PageTitle>Registro de Animales</PageTitle>
 
@@ -89,6 +90,7 @@ else
                                         <th>Sexo</th>
                                         <th>Condición</th>
                                         <th>Corral</th>
+                                        <th>Lote</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -101,9 +103,10 @@ else
                                             <td>@a.Sexo</td>
                                             <td>@(a.Condicion?.ToString() ?? "-")</td>
                                             <td>@(string.IsNullOrEmpty(a.IdCorral) ? "-" : a.IdCorral)</td>
-                                            <td>
-                                                <button class="btn btn-sm btn-info" @onclick="() => IrAlDetalle(a.Arete)">Ver Detalle</button>
-                                            </td>
+                                        <td>@GetPotreroName(a.IdPotrero)</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info" @onclick="() => IrAlDetalle(a.Arete)">Ver Detalle</button>
+                                        </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -120,6 +123,7 @@ else
     private bool IsAuthenticated = false;
     private Animal NewAnimal = new();
     private List<Animal> AllAnimals = new();
+    private List<Potrero> AllPotreros = new();
     private List<string> Razas = new();
     private string AreteError = string.Empty;
 
@@ -136,6 +140,7 @@ else
 
         await LoadRazasAsync();
         await LoadAnimalsAsync();
+        await LoadPotrerosAsync();
     }
 
     private async Task LoadRazasAsync()
@@ -147,6 +152,17 @@ else
     private async Task LoadAnimalsAsync()
     {
         AllAnimals = await AnimalService.GetAllAnimalsAsync();
+    }
+
+    private async Task LoadPotrerosAsync()
+    {
+        AllPotreros = await PotreroService.GetAllPotrerosAsync();
+    }
+
+    private string GetPotreroName(string idPotrero)
+    {
+        if (string.IsNullOrWhiteSpace(idPotrero)) return "-";
+        return AllPotreros.FirstOrDefault(p => p.IdPotrero == idPotrero)?.NombrePotrero ?? idPotrero;
     }
 
     private async Task HandleValidSubmit()

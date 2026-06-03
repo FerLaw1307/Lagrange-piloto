@@ -1,28 +1,634 @@
 ﻿@page "/home"
 @inject AuthenticationService AuthService
 @inject NavigationManager Navigation
+@inject EmpresaService EmpresaService
+@inject RanchoService RanchoService
+@inject PotreroService PotreroService
+@inject CorralService CorralService
+@inject AnimalService AnimalService
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard</PageTitle>
 
-@if (IsAuthenticated)
+@if (!IsAuthenticated)
 {
-    <h1>Hello, world!</h1>
-    <p>Welcome to your new app.</p>
+    <p>Redirigiendo al login...</p>
 }
 else
 {
-    <p>Redirigiendo al login...</p>
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                <div>
+                    <h2 class="mb-1">Organización — Resumen</h2>
+                    <p class="text-muted mb-0">Administra empresas ganaderas, ranchos, potreros y corrales desde la misma sección.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-outline-primary" @onclick="LoadDataAsync">Actualizar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-4 mb-5">
+            <div class="col">
+                <div class="animal-card action-card org-card-empresa h-100">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Empresas</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Registro de empresas ganaderas</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-empresa">@Empresas.Count</span>
+                    </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Añade y administra a las empresas que forman parte de tu organización.</p>
+                        <button class="btn btn-primary w-100 action-card-cta" @onclick="OpenEmpresaModal">Añadir empresa</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="animal-card action-card org-card-rancho h-100">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Ranchos</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Control por empresa</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-rancho">@Ranchos.Count</span>
+                    </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Registra ranchos pertenecientes a las empresas ganaderas existentes.</p>
+                        <button class="btn btn-secondary w-100 action-card-cta" @onclick="OpenRanchoModal" disabled="@(Empresas.Count == 0)">Añadir rancho</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="animal-card action-card org-card-potrero h-100">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Potreros</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Ubicados en ranchos</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-potrero">@Potreros.Count</span>
+                    </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Crea potreros y organiza el ganado dentro de cada rancho.</p>
+                        <button class="btn btn-info text-white w-100 action-card-cta" @onclick="OpenPotreroModal" disabled="@(Ranchos.Count == 0)">Añadir potrero</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="animal-card action-card org-card-corral h-100">
+                    <div class="animal-card-header">
+                        <div>
+                            <h5 class="animal-card-title mb-1">Corrales</h5>
+                            <p class="animal-card-subtitle mb-0"><small>Registrados por rancho</small></p>
+                        </div>
+                        <span class="animal-card-badge badge-corral">@Corrales.Count</span>
+                    </div>
+                    <div class="animal-card-content action-card-body">
+                        <p class="mb-3">Define corrales para manejar lotes y animales dentro del rancho.</p>
+                        <button class="btn btn-warning text-dark w-100 action-card-cta" @onclick="OpenCorralModal" disabled="@(Ranchos.Count == 0)">Añadir corral</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Animales — Total: @AnimalCount</h5>
+                        <button class="btn btn-warning" @onclick="OpenAnimalModal">Añadir animal</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
+                            <div>
+                                <h5 class="card-title mb-1">Animales registrados</h5>
+                                <p class="text-muted mb-0">Filtra animales por lote/potrero.</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-column flex-sm-row w-100 w-sm-auto">
+                                <select class="form-select" style="min-width:220px;" @bind="SelectedPotreroFilter">
+                                    <option value="">Todos los lotes</option>
+                                    @foreach (var lote in Potreros)
+                                    {
+                                        <option value="@lote.IdPotrero">@lote.NombrePotrero</option>
+                                    }
+                                </select>
+                                <button class="btn btn-outline-secondary" @onclick="ClearPotreroFilter">Limpiar</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mt-4">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Arete</th>
+                                        <th>Raza</th>
+                                        <th>Sexo</th>
+                                        <th>Condición</th>
+                                        <th>Corral</th>
+                                        <th>Lote</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!FilteredAnimals.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="7" class="text-center py-4">No hay animales para mostrar.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var animal in FilteredAnimals)
+                                        {
+                                            <tr>
+                                                <td><strong>@animal.Arete</strong></td>
+                                                <td>@animal.Raza</td>
+                                                <td>@animal.Sexo</td>
+                                                <td>@(animal.Condicion?.ToString() ?? "-")</td>
+                                                <td>@GetCorralName(animal.IdCorral)</td>
+                                                <td>@GetPotreroName(animal.IdPotrero)</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-info" @onclick="() => IrAlDetalle(animal.Arete)">Ver detalle</button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowEmpresaModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0, 0, 0, 0.45);" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar empresa ganadera</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre de la empresa</label>
+                        <input class="form-control" @bind="ModalEmpresa.NombreEmpresa" placeholder="Ej. Empresa Ganadera San Pedro" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ubicación</label>
+                        <input class="form-control" @bind="ModalEmpresa.Ubicacion" placeholder="Ej. Valle Central" />
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalMessage))
+                    {
+                        <div class="alert alert-danger">@ModalMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddEmpresa">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowRanchoModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0, 0, 0, 0.45);" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar rancho</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Empresa</label>
+                        <select class="form-select" @bind="ModalRancho.IdEmpresa">
+                            <option value="">Seleccione una empresa</option>
+                            @foreach (var empresa in Empresas)
+                            {
+                                <option value="@empresa.IdEmpresa">@empresa.NombreEmpresa</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del rancho</label>
+                        <input class="form-control" @bind="ModalRancho.NombreRancho" placeholder="Ej. Rancho El Valle" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Región</label>
+                        <input class="form-control" @bind="ModalRancho.Region" placeholder="Ej. Sierra Norte" />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalRancho.Latitude" placeholder="Ej. 10.100234" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalRancho.Longitude" placeholder="Ej. -84.001563" />
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalMessage))
+                    {
+                        <div class="alert alert-danger">@ModalMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddRancho" disabled="@(Empresas.Count == 0)">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowPotreroModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0, 0, 0, 0.45);" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar potrero</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rancho</label>
+                        <select class="form-select" @bind="ModalPotrero.IdRancho">
+                            <option value="">Seleccione un rancho</option>
+                            @foreach (var rancho in Ranchos)
+                            {
+                                <option value="@rancho.IdRancho">@rancho.NombreRancho</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del potrero</label>
+                        <input class="form-control" @bind="ModalPotrero.NombrePotrero" placeholder="Ej. Potrero Norte" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Área</label>
+                        <input class="form-control" @bind="ModalPotrero.Area" placeholder="Ej. 15 hectáreas" />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalPotrero.Latitude" placeholder="Ej. 10.103012" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalPotrero.Longitude" placeholder="Ej. -84.002341" />
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalMessage))
+                    {
+                        <div class="alert alert-danger">@ModalMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddPotrero" disabled="@(Ranchos.Count == 0)">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowCorralModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0, 0, 0, 0.45);" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar corral</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Rancho</label>
+                        <select class="form-select" @bind="ModalCorral.IdRancho">
+                            <option value="">Seleccione un rancho</option>
+                            @foreach (var rancho in Ranchos)
+                            {
+                                <option value="@rancho.IdRancho">@rancho.NombreRancho</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del corral</label>
+                        <input class="form-control" @bind="ModalCorral.NombreCorral" placeholder="Ej. Corral 1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Capacidad</label>
+                        <input class="form-control" @bind="ModalCorral.Capacidad" placeholder="Ej. 30 animales" />
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Latitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalCorral.Latitude" placeholder="Ej. 10.101523" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Longitud</label>
+                            <input type="number" step="0.000001" class="form-control" @bind="ModalCorral.Longitude" placeholder="Ej. -84.000872" />
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalMessage))
+                    {
+                        <div class="alert alert-danger">@ModalMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddCorral" disabled="@(Ranchos.Count == 0)">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowAnimalModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0, 0, 0, 0.45);" @onclick="CloseModal">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar animal</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Arete (SINIIGA/ID) *</label>
+                        <input class="form-control" @bind="ModalAnimal.Arete" />
+                        @if (!string.IsNullOrEmpty(AreteError))
+                        {
+                            <div class="text-danger small">@AreteError</div>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Raza *</label>
+                        <input class="form-control" @bind="ModalAnimal.Raza" placeholder="Ej. Cebú, Angus" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sexo *</label>
+                        <select class="form-select" @bind="ModalAnimal.Sexo">
+                            <option value="">Seleccionar...</option>
+                            <option>Macho</option>
+                            <option>Hembra</option>
+                        </select>
+                    </div>
+                    @if (!string.IsNullOrEmpty(ModalMessage))
+                    {
+                        <div class="alert alert-danger">@ModalMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseModal">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddAnimal" disabled="@IsSaving">@((IsSaving) ? "Registrando..." : "Guardar")</button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
     private bool IsAuthenticated = false;
+    private List<EmpresaGanadera> Empresas = new();
+    private List<Rancho> Ranchos = new();
+    private List<Potrero> Potreros = new();
+    private List<Corral> Corrales = new();
+    private List<Animal> AllAnimals = new();
+    private string SelectedPotreroFilter = string.Empty;
+    private int AnimalCount = 0;
+
+    private bool ShowEmpresaModal = false;
+    private bool ShowRanchoModal = false;
+    private bool ShowPotreroModal = false;
+    private bool ShowCorralModal = false;
+    private bool ShowAnimalModal = false;
+
+    private EmpresaGanadera ModalEmpresa = new();
+    private Rancho ModalRancho = new();
+    private Potrero ModalPotrero = new();
+    private Corral ModalCorral = new();
+    private Animal ModalAnimal = new();
+
+    private string ModalMessage = string.Empty;
+    private string AreteError = string.Empty;
+    private bool IsSaving = false;
 
     protected override async Task OnInitializedAsync()
     {
         IsAuthenticated = await AuthService.IsAuthenticatedAsync();
         if (!IsAuthenticated)
         {
-            Navigation.NavigateTo("/");
+            Navigation.NavigateTo("");
+            return;
         }
+
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        Empresas = await EmpresaService.GetAllEmpresasAsync();
+        Ranchos = await RanchoService.GetAllRanchosAsync();
+        Potreros = await PotreroService.GetAllPotrerosAsync();
+        Corrales = await CorralService.GetAllCorralesAsync();
+        AllAnimals = await AnimalService.GetAllAnimalsAsync();
+        AnimalCount = AllAnimals.Count;
+        StateHasChanged();
+    }
+
+    private void OpenEmpresaModal()
+    {
+        ResetModal();
+        ShowEmpresaModal = true;
+    }
+
+    private void OpenRanchoModal()
+    {
+        ResetModal();
+        ShowRanchoModal = true;
+    }
+
+    private void OpenPotreroModal()
+    {
+        ResetModal();
+        ShowPotreroModal = true;
+    }
+
+    private void OpenCorralModal()
+    {
+        ResetModal();
+        ShowCorralModal = true;
+    }
+
+    private void OpenAnimalModal()
+    {
+        ResetModal();
+        ShowAnimalModal = true;
+    }
+
+    private void CloseModal()
+    {
+        ShowEmpresaModal = false;
+        ShowRanchoModal = false;
+        ShowPotreroModal = false;
+        ShowCorralModal = false;
+        ShowAnimalModal = false;
+        ModalMessage = string.Empty;
+        AreteError = string.Empty;
+        ResetModal();
+    }
+
+    private void ResetModal()
+    {
+        ModalMessage = string.Empty;
+        AreteError = string.Empty;
+        ModalEmpresa = new EmpresaGanadera();
+        ModalRancho = new Rancho();
+        ModalPotrero = new Potrero();
+        ModalCorral = new Corral();
+        ModalAnimal = new Animal();
+    }
+
+    private async Task AddEmpresa()
+    {
+        if (string.IsNullOrWhiteSpace(ModalEmpresa.NombreEmpresa))
+        {
+            ModalMessage = "Debes ingresar el nombre de la empresa.";
+            return;
+        }
+
+        ModalEmpresa.IdEmpresa = CreateId("EMP");
+        ModalEmpresa.UuidSistema = Guid.NewGuid().ToString();
+        await EmpresaService.AddEmpresaAsync(ModalEmpresa);
+        await LoadDataAsync();
+        CloseModal();
+    }
+
+    private async Task AddRancho()
+    {
+        if (string.IsNullOrWhiteSpace(ModalRancho.IdEmpresa) || string.IsNullOrWhiteSpace(ModalRancho.NombreRancho))
+        {
+            ModalMessage = "Selecciona empresa y nombre del rancho.";
+            return;
+        }
+
+        ModalRancho.IdRancho = CreateId("RAN");
+        ModalRancho.UuidSistema = Guid.NewGuid().ToString();
+        await RanchoService.AddRanchoAsync(ModalRancho);
+        await LoadDataAsync();
+        CloseModal();
+    }
+
+    private async Task AddPotrero()
+    {
+        if (string.IsNullOrWhiteSpace(ModalPotrero.IdRancho) || string.IsNullOrWhiteSpace(ModalPotrero.NombrePotrero))
+        {
+            ModalMessage = "Selecciona rancho y nombre del potrero.";
+            return;
+        }
+
+        ModalPotrero.IdPotrero = CreateId("POT");
+        ModalPotrero.UuidSistema = Guid.NewGuid().ToString();
+        await PotreroService.AddPotreroAsync(ModalPotrero);
+        await LoadDataAsync();
+        CloseModal();
+    }
+
+    private async Task AddCorral()
+    {
+        if (string.IsNullOrWhiteSpace(ModalCorral.IdRancho) || string.IsNullOrWhiteSpace(ModalCorral.NombreCorral))
+        {
+            ModalMessage = "Selecciona rancho y nombre del corral.";
+            return;
+        }
+
+        ModalCorral.IdCorral = CreateId("COR");
+        ModalCorral.UuidSistema = Guid.NewGuid().ToString();
+        await CorralService.AddCorralAsync(ModalCorral);
+        await LoadDataAsync();
+        CloseModal();
+    }
+
+    private async Task AddAnimal()
+    {
+        AreteError = string.Empty;
+        if (string.IsNullOrWhiteSpace(ModalAnimal.Arete))
+        {
+            AreteError = "El arete es obligatorio.";
+            return;
+        }
+
+        IsSaving = true;
+        try
+        {
+            if (!await AnimalService.IsAreteUniqueAsync(ModalAnimal.Arete))
+            {
+                AreteError = "El arete ya existe.";
+                return;
+            }
+
+            await AnimalService.AddAnimalAsync(ModalAnimal);
+            await LoadDataAsync();
+            CloseModal();
+        }
+        catch (InvalidOperationException ex)
+        {
+            AreteError = ex.Message;
+        }
+        catch (Exception)
+        {
+            AreteError = "Error al registrar el animal.";
+        }
+        finally
+        {
+            IsSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearPotreroFilter()
+    {
+        SelectedPotreroFilter = string.Empty;
+    }
+
+    private List<Animal> FilteredAnimals => string.IsNullOrWhiteSpace(SelectedPotreroFilter)
+        ? AllAnimals
+        : AllAnimals.Where(a => string.Equals(a.IdPotrero, SelectedPotreroFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private string GetPotreroName(string idPotrero)
+    {
+        if (string.IsNullOrWhiteSpace(idPotrero)) return "-";
+        return Potreros.FirstOrDefault(p => p.IdPotrero == idPotrero)?.NombrePotrero ?? idPotrero;
+    }
+
+    private string GetCorralName(string idCorral)
+    {
+        if (string.IsNullOrWhiteSpace(idCorral)) return "-";
+        return Corrales.FirstOrDefault(c => c.IdCorral == idCorral)?.NombreCorral ?? idCorral;
+    }
+
+    private void IrAlDetalle(string arete)
+    {
+        Navigation.NavigateTo($"animales/detalle/{Uri.EscapeDataString(arete)}");
+    }
+
+    private static string CreateId(string prefix)
+    {
+        return $"{prefix}-{Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper()}";
     }
 }

@@ -21,4 +21,7 @@ public class Animal
 
     // Opcional: asignación a Corral
     public string IdCorral { get; set; } = string.Empty;
+
+    // Opcional: asignación a Potrero/Lote
+    public string IdPotrero { get; set; } = string.Empty;
 }

@@ -555,3 +555,26 @@ code{color:#c02d76}
   .chart-wrap{height:230px}.chart-wrap.sm{height:200px}
   .table{font-size:.72rem}
 }
+
+/* Summary cards for dashboard */
+.summary-grid{display:flex;gap:1.5rem;flex-wrap:wrap}
+.summary-card{
+  background:#fff;
+  border:1px solid var(--linea);
+  border-radius:18px;
+  padding:1.35rem;
+  position:relative;
+  min-height:170px;
+  box-shadow:0 10px 28px rgba(73,50,26,.06);
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+}
+.summary-title{font-family:'Montserrat',sans-serif;font-weight:800;color:var(--cafe);font-size:1.05rem;margin:0}
+.summary-value{font-family:'Montserrat',sans-serif;font-weight:800;color:var(--negro);font-size:2.25rem;margin-top:1rem}
+.count-bubble{position:absolute;top:1rem;right:1rem;min-width:36px;height:36px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;padding:0 10px;font-weight:700}
+.count-empresa{color:#084298;background:#cfe2ff}
+.count-rancho{color:#371b92;background:#e2d9ff}
+.count-potrero{color:#055160;background:#cff4fc}
+.count-corral{color:#9a5700;background:#ffe5d0}
+.summary-card .card-cta{margin-top:auto}

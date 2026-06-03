@@ -47,6 +47,17 @@ public class AnimalService
         await SaveAnimalsAsync(all);
     }
 
+    public async Task UpdateAnimalAsync(Animal animal)
+    {
+        var all = await GetAllAnimalsAsync();
+        var index = all.FindIndex(a => string.Equals(a.Arete?.Trim(), animal.Arete?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (index == -1)
+            throw new InvalidOperationException("Animal no encontrado.");
+
+        all[index] = animal;
+        await SaveAnimalsAsync(all);
+    }
+
     private async Task SaveAnimalsAsync(List<Animal> animals)
     {
         var json = System.Text.Json.JsonSerializer.Serialize(animals);

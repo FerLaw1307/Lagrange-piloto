@@ -21,6 +21,13 @@
     {
         <h3>Detalle: <strong>@Animal.Arete</strong></h3>
 
+        <div class="mb-4">
+            <button class="btn btn-outline-primary me-2" @onclick="OpenEditModal">Editar animal</button>
+            <button class="btn btn-outline-secondary me-2" @onclick="OpenCorralModal">Asignar corral</button>
+            <button class="btn btn-outline-info me-2" @onclick="OpenLoteModal">Asignar lote</button>
+            <button class="btn btn-outline-success" @onclick="OpenFeedingModal">Registrar alimentación</button>
+        </div>
+
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">Resumen</button>
@@ -46,6 +53,7 @@
                             <dt class="col-sm-3">Sexo</dt><dd class="col-sm-9">@Animal.Sexo</dd>
                             <dt class="col-sm-3">Condición</dt><dd class="col-sm-9">@(Animal.Condicion?.ToString() ?? "-")</dd>
                             <dt class="col-sm-3">Corral</dt><dd class="col-sm-9">@(Corral?.NombreCorral ?? "-")</dd>
+                            <dt class="col-sm-3">Lote / Potrero</dt><dd class="col-sm-9">@(AssignedPotrero?.NombrePotrero ?? "-")</dd>
                         </dl>
                     </div>
                 </div>
@@ -70,24 +78,53 @@
             </div>
 
             <div class="tab-pane fade" id="lote" role="tabpanel">
-                @if (Potreros == null || !Potreros.Any())
+                @if (AssignedPotrero == null)
                 {
-                    <div class="alert alert-secondary">No hay potreros relacionados.</div>
+                    <div class="alert alert-secondary">Sin lote asignado.</div>
                 }
                 else
                 {
-                    <div class="list-group">
-                        @foreach (var p in Potreros)
-                        {
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">@p.NombrePotrero</h6>
-                                </div>
-                                <p class="mb-1">Area: @p.Area</p>
-                            </div>
-                        }
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="mb-2">Lote asignado</h5>
+                            <p class="mb-1"><strong>Nombre:</strong> @AssignedPotrero.NombrePotrero</p>
+                            <p class="mb-1"><strong>Área:</strong> @AssignedPotrero.Area</p>
+                            <p class="mb-1"><strong>Rancho:</strong> @AssignedRancho?.NombreRancho ?? "-"</p>
+                        </div>
                     </div>
                 }
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="mb-3">Asignar al lote</h5>
+                        @if (Potreros == null || !Potreros.Any())
+                        {
+                            <div class="alert alert-secondary">No hay potreros disponibles para asignar.</div>
+                        }
+                        else
+                        {
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-8">
+                                    <label class="form-label">Selecciona un potrero / lote</label>
+                                    <select class="form-select" @bind="SelectedPotreroId">
+                                        <option value="">-- Selecciona un lote --</option>
+                                        @foreach (var p in Potreros)
+                                        {
+                                            <option value="@p.IdPotrero">@p.NombrePotrero (@p.Area)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-primary w-100" @onclick="AssignPotrero" disabled="@(string.IsNullOrEmpty(SelectedPotreroId) || IsSaving)">@((IsSaving) ? "Guardando..." : "Asignar lote")</button>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(PotreroMessage))
+                            {
+                                <div class="alert alert-info mt-3">@PotreroMessage</div>
+                            }
+                        }
+                    </div>
+                </div>
             </div>
 
             <div class="tab-pane fade" id="feed" role="tabpanel">
@@ -148,6 +185,168 @@
     }
 </div>
 
+@if (ShowEditModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.45);" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar animal</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Arete</label>
+                        <input class="form-control" value="@EditAnimal.Arete" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Raza</label>
+                        <input class="form-control" @bind="EditAnimal.Raza" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Sexo</label>
+                        <select class="form-select" @bind="EditAnimal.Sexo">
+                            <option value="">-- Selecciona sexo --</option>
+                            <option value="Macho">Macho</option>
+                            <option value="Hembra">Hembra</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Condición</label>
+                        <input class="form-control" type="number" @bind="EditAnimal.Condicion" placeholder="Ej. 1" />
+                    </div>
+                    @if (!string.IsNullOrEmpty(EditMessage))
+                    {
+                        <div class="alert alert-danger">@EditMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModals">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="SaveAnimalEdit" disabled="@(IsSaving)">Guardar cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowCorralModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.45);" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar corral</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Corrales == null || !Corrales.Any())
+                    {
+                        <div class="alert alert-secondary">No hay corrales disponibles.</div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Selecciona un corral</label>
+                            <select class="form-select" @bind="SelectedCorralId">
+                                <option value="">-- Selecciona corral --</option>
+                                @foreach (var c in Corrales)
+                                {
+                                    <option value="@c.IdCorral">@c.NombreCorral (@c.Capacidad)</option>
+                                }
+                            </select>
+                        </div>
+                        @if (!string.IsNullOrEmpty(CorralModalMessage))
+                        {
+                            <div class="alert alert-info">@CorralModalMessage</div>
+                        }
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModals">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AssignCorral" disabled="@(IsSaving || string.IsNullOrWhiteSpace(SelectedCorralId))">Asignar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowLoteModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.45);" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar lote</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Potreros == null || !Potreros.Any())
+                    {
+                        <div class="alert alert-secondary">No hay potreros disponibles para asignar.</div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Selecciona un lote</label>
+                            <select class="form-select" @bind="SelectedPotreroId">
+                                <option value="">-- Selecciona lote --</option>
+                                @foreach (var p in Potreros)
+                                {
+                                    <option value="@p.IdPotrero">@p.NombrePotrero (@p.Area)</option>
+                                }
+                            </select>
+                        </div>
+                        @if (!string.IsNullOrEmpty(PotreroMessage))
+                        {
+                            <div class="alert alert-info">@PotreroMessage</div>
+                        }
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModals">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AssignPotrero" disabled="@(IsSaving || string.IsNullOrWhiteSpace(SelectedPotreroId))">Asignar lote</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (ShowFeedingModal)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.45);" @onclick="CloseModals">
+        <div class="modal-dialog modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar alimentación</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModals"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de alimento</label>
+                        <input class="form-control" @bind="NewEvent.TipoAlimento" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad</label>
+                        <input class="form-control" @bind="NewEvent.Cantidad" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-control" @bind="NewEvent.Notas"></textarea>
+                    </div>
+                    @if (!string.IsNullOrEmpty(FeedingModalMessage))
+                    {
+                        <div class="alert alert-info">@FeedingModalMessage</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModals">Cancelar</button>
+                    <button class="btn btn-primary" @onclick="AddFeedingEvent" disabled="@(IsSaving)">Guardar alimentación</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public string Arete { get; set; } = string.Empty;
@@ -155,10 +354,25 @@
     private Animal? Animal;
     private Corral? Corral;
     private Rancho? Rancho;
+    private Potrero? AssignedPotrero;
+    private Rancho? AssignedRancho;
     private List<Potrero> Potreros = new();
+    private List<Corral> Corrales = new();
+    private Animal EditAnimal = new();
+    private string SelectedPotreroId = string.Empty;
+    private string SelectedCorralId = string.Empty;
+    private string PotreroMessage = string.Empty;
+    private string CorralModalMessage = string.Empty;
+    private string EditMessage = string.Empty;
+    private string FeedingModalMessage = string.Empty;
+    private bool ShowEditModal = false;
+    private bool ShowCorralModal = false;
+    private bool ShowLoteModal = false;
+    private bool ShowFeedingModal = false;
     private List<FeedingEvent> FeedingEvents = new();
     private FeedingEvent NewEvent = new();
     private bool IsLoading = true;
+    private bool IsSaving = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,6 +383,8 @@
     {
         IsLoading = true;
         Animal = await AnimalService.GetAnimalByAreteAsync(Arete);
+        Corrales = await CorralService.GetAllCorralesAsync();
+
         if (Animal != null)
         {
             if (!string.IsNullOrWhiteSpace(Animal.IdCorral))
@@ -180,18 +396,209 @@
                     Potreros = await PotreroService.GetPotrerosByRanchoIdAsync(Corral.IdRancho);
                 }
             }
+            else
+            {
+                Potreros = await PotreroService.GetAllPotrerosAsync();
+            }
+
+            if (!string.IsNullOrWhiteSpace(Animal.IdPotrero))
+            {
+                AssignedPotrero = await PotreroService.GetPotreroByIdAsync(Animal.IdPotrero);
+                if (AssignedPotrero != null)
+                {
+                    AssignedRancho = await RanchoService.GetRanchoByIdAsync(AssignedPotrero.IdRancho);
+                    SelectedPotreroId = AssignedPotrero.IdPotrero;
+                    if (!Potreros.Any(p => p.IdPotrero == AssignedPotrero.IdPotrero))
+                    {
+                        Potreros.Insert(0, AssignedPotrero);
+                    }
+                }
+            }
+            else
+            {
+                SelectedPotreroId = string.Empty;
+                AssignedPotrero = null;
+                AssignedRancho = null;
+            }
+
             FeedingEvents = await FeedingEventService.GetEventsByAreteAsync(Animal.Arete);
         }
         IsLoading = false;
     }
 
+    private void OpenEditModal()
+    {
+        if (Animal == null) return;
+        EditAnimal = new Animal
+        {
+            IdAnimal = Animal.IdAnimal,
+            UuidSistema = Animal.UuidSistema,
+            Arete = Animal.Arete,
+            Raza = Animal.Raza,
+            Sexo = Animal.Sexo,
+            Condicion = Animal.Condicion,
+            IdCorral = Animal.IdCorral,
+            IdPotrero = Animal.IdPotrero
+        };
+        EditMessage = string.Empty;
+        ShowEditModal = true;
+    }
+
+    private void OpenCorralModal()
+    {
+        if (Animal == null) return;
+        SelectedCorralId = Animal.IdCorral;
+        CorralModalMessage = string.Empty;
+        ShowCorralModal = true;
+    }
+
+    private void OpenLoteModal()
+    {
+        if (Animal == null) return;
+        SelectedPotreroId = Animal.IdPotrero;
+        PotreroMessage = string.Empty;
+        ShowLoteModal = true;
+    }
+
+    private void OpenFeedingModal()
+    {
+        NewEvent = new FeedingEvent();
+        FeedingModalMessage = string.Empty;
+        ShowFeedingModal = true;
+    }
+
+    private void CloseModals()
+    {
+        ShowEditModal = false;
+        ShowCorralModal = false;
+        ShowLoteModal = false;
+        ShowFeedingModal = false;
+        EditMessage = string.Empty;
+        CorralModalMessage = string.Empty;
+        PotreroMessage = string.Empty;
+        FeedingModalMessage = string.Empty;
+    }
+
+    private async Task SaveAnimalEdit()
+    {
+        if (Animal == null) return;
+        if (string.IsNullOrWhiteSpace(EditAnimal.Raza) || string.IsNullOrWhiteSpace(EditAnimal.Sexo))
+        {
+            EditMessage = "Raza y sexo son obligatorios.";
+            return;
+        }
+
+        IsSaving = true;
+        EditMessage = string.Empty;
+        try
+        {
+            Animal.Raza = EditAnimal.Raza;
+            Animal.Sexo = EditAnimal.Sexo;
+            Animal.Condicion = EditAnimal.Condicion;
+            await AnimalService.UpdateAnimalAsync(Animal);
+            await LoadAllAsync();
+            CloseModals();
+        }
+        catch (Exception ex)
+        {
+            EditMessage = "No se pudo guardar los cambios.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task AssignCorral()
+    {
+        if (Animal == null || string.IsNullOrWhiteSpace(SelectedCorralId)) return;
+
+        IsSaving = true;
+        CorralModalMessage = string.Empty;
+        try
+        {
+            var corral = await CorralService.GetCorralByIdAsync(SelectedCorralId);
+            if (corral == null)
+            {
+                CorralModalMessage = "El corral seleccionado no existe.";
+                return;
+            }
+
+            Animal.IdCorral = corral.IdCorral;
+            await AnimalService.UpdateAnimalAsync(Animal);
+            CorralModalMessage = "Corral asignado correctamente.";
+            await LoadAllAsync();
+            CloseModals();
+        }
+        catch (Exception)
+        {
+            CorralModalMessage = "No se pudo asignar el corral. Intenta nuevamente.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task AssignPotrero()
+    {
+        if (Animal == null || string.IsNullOrWhiteSpace(SelectedPotreroId)) return;
+
+        IsSaving = true;
+        PotreroMessage = string.Empty;
+        try
+        {
+            var potrero = await PotreroService.GetPotreroByIdAsync(SelectedPotreroId);
+            if (potrero == null)
+            {
+                PotreroMessage = "El lote seleccionado no existe.";
+                return;
+            }
+
+            Animal.IdPotrero = potrero.IdPotrero;
+            await AnimalService.UpdateAnimalAsync(Animal);
+            PotreroMessage = "Lote asignado correctamente.";
+            await LoadAllAsync();
+            CloseModals();
+        }
+        catch (Exception)
+        {
+            PotreroMessage = "No se pudo asignar el lote. Intenta nuevamente.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
     private async Task AddFeedingEvent()
     {
         if (Animal == null) return;
-        NewEvent.Arete = Animal.Arete;
-        NewEvent.Fecha = DateTime.UtcNow;
-        await FeedingEventService.AddEventAsync(NewEvent);
-        NewEvent = new FeedingEvent();
-        FeedingEvents = await FeedingEventService.GetEventsByAreteAsync(Animal.Arete);
+        if (string.IsNullOrWhiteSpace(NewEvent.TipoAlimento) || string.IsNullOrWhiteSpace(NewEvent.Cantidad))
+        {
+            FeedingModalMessage = "Tipo de alimento y cantidad son obligatorios.";
+            return;
+        }
+
+        IsSaving = true;
+        FeedingModalMessage = string.Empty;
+        try
+        {
+            NewEvent.Arete = Animal.Arete;
+            NewEvent.Fecha = DateTime.UtcNow;
+            await FeedingEventService.AddEventAsync(NewEvent);
+            NewEvent = new FeedingEvent();
+            FeedingEvents = await FeedingEventService.GetEventsByAreteAsync(Animal.Arete);
+            FeedingModalMessage = "Alimentación registrada correctamente.";
+            CloseModals();
+        }
+        catch (Exception)
+        {
+            FeedingModalMessage = "No se pudo registrar la alimentación. Intenta nuevamente.";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
     }
 }
